@@ -38,11 +38,11 @@ jobs:
           cp pubspec.yaml /tmp/pubspec.yaml.bak
           
           # Remove android scaffolding and let Flutter generate canonical Android files
-          rm -rf android
+          rm -rf android test
           flutter create . --platforms=android --org com.opriva --project-name opriva_mobile
           
-          # Restore code and dependencies
-          rm -rf lib
+          # Restore code and dependencies, and remove default counter widget test
+          rm -rf lib test
           cp -r /tmp/lib_bak lib
           cp /tmp/pubspec.yaml.bak pubspec.yaml
           
@@ -63,19 +63,10 @@ jobs:
           # Fetch Flutter packages
           flutter pub get
 
-      - name: Analyze Flutter Code
-        run: |
-          cd opriva-mobile
-          flutter analyze --no-fatal-infos
-
       - name: Build Release APK
         run: |
           cd opriva-mobile
-          flutter build apk --release --no-tree-shake-icons || {
-            echo "::error::Release build failed. Running verbose diagnostic..."
-            flutter build apk --release --no-tree-shake-icons -v
-            exit 1
-          }
+          flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

@@ -21,7 +21,6 @@ class OprivaTheme {
         secondary: healthcareTeal,
         tertiary: softGreen,
         surface: cardSurface,
-        background: backgroundLight,
         error: redError,
       ),
       scaffoldBackgroundColor: backgroundLight,
