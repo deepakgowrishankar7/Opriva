@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: opriva-backend
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+opriva:
+  jwt:
+    secret: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+    expiration-ms: 86400000 # 24 hours
+  payment:
+    provider: mock # "mock" or "razorpay"
+    razorpay:
+      key-id: ${RAZORPAY_KEY_ID:rzp_test_mockKey123}
+      key-secret: ${RAZORPAY_KEY_SECRET:mockSecretKey456}
+  places:
+    provider: mock # "mock" or "google"
+    google-api-key: ${GOOGLE_PLACES_API_KEY:}
+  storage:
+    provider: local # "local" or "azure"
+    local-dir: ${STORAGE_LOCAL_DIR:./storage_data}
+  cors:
+    allowed-origins: "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:3000"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

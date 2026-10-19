@@ -1,0 +1,28 @@
+# Dependencies & Build Artifacts
+node_modules/
+dist/
+build/
+target/
+.gradle/
+.idea/
+*.class
+*.jar
+*.war
+
+# Environment & Secrets (NEVER COMMIT CREDENTIALS)
+.env
+.env.local
+application-local.properties
+application-local.yml
+
+# Temporary & Cache
+.DS_Store
+Thumbs.db
+*.log
+.tools/
+
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
