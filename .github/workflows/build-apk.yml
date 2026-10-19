@@ -30,15 +30,33 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Get Dependencies
+      - name: Prepare Android Platform Files
         run: |
           cd opriva-mobile
+          # Backup our complete custom code and config
+          cp -r lib /tmp/lib_bak
+          cp pubspec.yaml /tmp/pubspec.yaml.bak
+          
+          # Remove broken scaffolding and let Flutter generate canonical Android files
+          rm -rf android
+          flutter create . --platforms=android --org com.opriva --project-name opriva_mobile
+          
+          # Restore code and dependencies
+          rm -rf lib
+          cp -r /tmp/lib_bak lib
+          cp /tmp/pubspec.yaml.bak pubspec.yaml
+          
+          # Configure custom app title and network permissions
+          sed -i 's/android:label="opriva_mobile"/android:label="Opriva"/g' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.intent.action.INTERNET"/>\n    <uses-permission android:name="android.intent.action.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.intent.action.ACCESS_COARSE_LOCATION"/>' android/app/src/main/AndroidManifest.xml
+          
+          # Fetch Flutter packages
           flutter pub get
 
       - name: Build Release APK
         run: |
           cd opriva-mobile
-          flutter build apk --release
+          flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -46,23 +64,23 @@ jobs:
           name: Opriva-Patient-App
           path: opriva-mobile/build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Create GitHub Release with APK
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         with:
           tag_name: v1.0.0-apk
           name: "Opriva Patient App v1.0.0 (Android APK)"
           body: |
-            ### Opriva — Healthcare, Without the Wait.
+            ### 🏥 Opriva — Healthcare, Without the Wait.
             Official Android APK download for the Opriva Patient Mobile Application.
 
             **Features in this release:**
-            - Discover nearest verified hospitals first with genuine Google Ratings.
-            - Select Normal OP Card (₹350) or Special Priority OP Card (₹750).
-            - Patient & dependent registration with previous report upload.
-            - 10-minute slot hold timer + UPI QR scanner payment.
-            - Live queue token tracking with estimated wait times and reception desk contact.
-            - Native 12 Indian languages support + Urdu RTL.
+            - 📍 Discover nearest verified hospitals first with genuine Google Ratings.
+            - 🎫 Select Normal OP Card (₹350) or Special Priority OP Card (₹750).
+            - 📋 Patient & dependent registration with previous report upload.
+            - ⏱️ 10-minute slot hold timer + UPI QR scanner payment.
+            - 🔔 Live queue token tracking with estimated wait times and reception desk contact.
+            - 🌐 Native 12 Indian languages support + Urdu RTL.
           files: opriva-mobile/build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
