@@ -1,0 +1,68 @@
+name: Build and Release Opriva Patient APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Dependencies
+        run: |
+          cd opriva-mobile
+          flutter pub get
+
+      - name: Build Release APK
+        run: |
+          cd opriva-mobile
+          flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Opriva-Patient-App
+          path: opriva-mobile/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0-apk
+          name: "Opriva Patient App v1.0.0 (Android APK)"
+          body: |
+            ### Opriva — Healthcare, Without the Wait.
+            Official Android APK download for the Opriva Patient Mobile Application.
+
+            **Features in this release:**
+            - Discover nearest verified hospitals first with genuine Google Ratings.
+            - Select Normal OP Card (₹350) or Special Priority OP Card (₹750).
+            - Patient & dependent registration with previous report upload.
+            - 10-minute slot hold timer + UPI QR scanner payment.
+            - Live queue token tracking with estimated wait times and reception desk contact.
+            - Native 12 Indian languages support + Urdu RTL.
+          files: opriva-mobile/build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
