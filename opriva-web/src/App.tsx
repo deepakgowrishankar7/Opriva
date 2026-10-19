@@ -12,7 +12,7 @@ import { Bell, X, Check, ShieldCheck } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'index' | 'patient' | 'receptionist' | 'clinical' | 'tv-display'>('index');
+  const [activeTab, setActiveTab] = useState<'index' | 'receptionist' | 'clinical' | 'tv-display'>('index');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isLangModalOpen, setIsLangModalOpen] = useState(() => {
@@ -25,8 +25,6 @@ export const App: React.FC = () => {
       setActiveTab('receptionist');
     } else if (user?.role === 'ROLE_CLINICIAN') {
       setActiveTab('clinical');
-    } else if (user?.role === 'ROLE_PATIENT') {
-      setActiveTab('patient');
     }
   }, [user?.role]);
 
@@ -65,7 +63,7 @@ export const App: React.FC = () => {
   };
 
   // 1. HOSPITAL GATEWAY INDEX
-  if (activeTab === 'index' || (!user && activeTab !== 'tv-display' && activeTab !== 'patient')) {
+  if (activeTab === 'index' || (!user && activeTab !== 'tv-display')) {
     return (
       <HospitalStaffIndex 
         onSelectStation={(station) => {
@@ -84,7 +82,7 @@ export const App: React.FC = () => {
     );
   }
 
-  // 3. LOGGED IN HOSPITAL WORKSTATIONS (Patient, Receptionist, Doctor)
+  // 3. LOGGED IN HOSPITAL WORKSTATIONS (Receptionist Desk or Doctor OPD Chamber)
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       
@@ -99,7 +97,6 @@ export const App: React.FC = () => {
 
       {/* Main Workstation View Area */}
       <main className="flex-1">
-        {activeTab === 'patient' && <PatientPortal />}
         {activeTab === 'receptionist' && <ReceptionistDashboard />}
         {activeTab === 'clinical' && <ClinicalDashboard />}
       </main>

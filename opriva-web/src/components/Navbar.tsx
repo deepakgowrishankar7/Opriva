@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 
 interface NavbarProps {
-  activeTab: 'patient' | 'receptionist' | 'clinical' | 'tv-display';
-  setActiveTab: (tab: 'patient' | 'receptionist' | 'clinical' | 'tv-display') => void;
+  activeTab: 'receptionist' | 'clinical' | 'tv-display';
+  setActiveTab: (tab: 'receptionist' | 'clinical' | 'tv-display') => void;
   unreadNotificationsCount?: number;
   onOpenNotifications?: () => void;
   onReturnToIndex?: () => void;
@@ -44,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center space-x-3 cursor-pointer" 
             onClick={() => {
               if (onReturnToIndex) onReturnToIndex();
-              else setActiveTab('patient');
+              else setActiveTab('receptionist');
             }}
             title="Return to Hospital Portal Gateway"
           >
@@ -68,20 +68,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Role Navigation Tabs */}
           <nav className="hidden md:flex items-center space-x-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-            <button
-              onClick={() => {
-                setActiveTab('patient');
-                if (user?.role !== 'ROLE_PATIENT') switchDemoRole('ROLE_PATIENT');
-              }}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'patient'
-                  ? 'bg-white text-teal-800 shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5 text-teal-600" />
-              <span>Patient Portal</span>
-            </button>
 
             <button
               onClick={() => {
