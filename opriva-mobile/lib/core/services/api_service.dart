@@ -1,21 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/hospital_model.dart';
 import '../../models/queue_token_model.dart';
 
 class ApiService {
   // Use 10.0.2.2 for Android emulator, localhost for web/desktop, or custom LAN IP
   static const String baseUrl = 'http://10.0.2.2:8080/api/v1';
+  static String? _cachedToken;
 
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('opriva_jwt_token');
+    return _cachedToken;
   }
 
   static Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('opriva_jwt_token', token);
+    _cachedToken = token;
   }
 
   static Future<List<HospitalModel>> fetchHospitals({String? keyword}) async {
