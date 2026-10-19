@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/opriva_theme.dart';
 import '../models/hospital_model.dart';
+import '../core/localization/app_localizations.dart';
 import 'upi_qr_payment_screen.dart';
 
 class PatientDetailsScreen extends StatefulWidget {
@@ -345,7 +346,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Enter Patient Details'),
+        title: Text(AppLocalizations.tr(context, 'enterPatientDetails', fallback: 'Enter Patient Details')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -392,9 +393,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               ),
 
               const SizedBox(height: 20),
-              const Text(
-                'Who is this consultation for?',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: OprivaTheme.navyDark),
+              Text(
+                AppLocalizations.tr(context, 'whoIsConsultationFor', fallback: 'Who is this consultation for?'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: OprivaTheme.navyDark),
               ),
               const SizedBox(height: 8),
               Row(
@@ -422,9 +423,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               const SizedBox(height: 18),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Patient Full Name *',
-                  prefixIcon: Icon(Icons.person_outline),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.tr(context, 'patientFullName', fallback: 'Patient Full Name *'),
+                  prefixIcon: const Icon(Icons.person_outline),
                 ),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Please enter patient name' : null,
               ),
@@ -437,9 +438,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     child: TextFormField(
                       controller: _ageController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Age *',
-                        prefixIcon: Icon(Icons.calendar_today_outlined),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.tr(context, 'age', fallback: 'Age *'),
+                        prefixIcon: const Icon(Icons.calendar_today_outlined),
                       ),
                       validator: (val) => val == null || val.isEmpty ? 'Required' : null,
                     ),
@@ -449,9 +450,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     flex: 2,
                     child: DropdownButtonFormField<String>(
                       value: _selectedGender,
-                      decoration: const InputDecoration(
-                        labelText: 'Gender *',
-                        prefixIcon: Icon(Icons.wc_outlined),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.tr(context, 'gender', fallback: 'Gender *'),
+                        prefixIcon: const Icon(Icons.wc_outlined),
                       ),
                       items: ['Female', 'Male', 'Other'].map((g) {
                         return DropdownMenuItem(value: g, child: Text(g));
@@ -468,9 +469,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Mobile Number for SMS/Queue Token *',
-                  prefixIcon: Icon(Icons.phone_outlined),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.tr(context, 'mobileNumber', fallback: 'Mobile Number for SMS/Queue Token *'),
+                  prefixIcon: const Icon(Icons.phone_outlined),
                 ),
                 validator: (val) =>
                     val == null || val.length < 10 ? 'Enter valid 10-digit number' : null,
@@ -480,9 +481,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
               TextFormField(
                 controller: _symptomsController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Reason for Visit / Symptoms (Optional)',
-                  prefixIcon: Icon(Icons.healing_outlined),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.tr(context, 'reasonForVisit', fallback: 'Reason for Visit / Symptoms (Optional)'),
+                  prefixIcon: const Icon(Icons.healing_outlined),
                 ),
               ),
 
@@ -622,7 +623,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     }
                   },
                   child: Text(
-                    'Proceed to Pay ₹${widget.cardType.feeAmount.toInt()} via UPI QR',
+                    '${AppLocalizations.tr(context, 'proceedToPayUpi', fallback: 'Proceed to Pay via UPI QR')} (₹${widget.cardType.feeAmount.toInt()})',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),

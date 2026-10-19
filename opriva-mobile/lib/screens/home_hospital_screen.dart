@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/theme/opriva_theme.dart';
 import '../models/hospital_model.dart';
 import '../core/services/api_service.dart';
+import '../core/localization/app_localizations.dart';
+import '../main.dart';
 import 'op_card_selection_screen.dart';
 
 class HomeHospitalScreen extends StatefulWidget {
@@ -16,6 +18,21 @@ class _HomeHospitalScreenState extends State<HomeHospitalScreen> {
   bool _loading = true;
   String _selectedLanguage = 'English';
   final TextEditingController _searchController = TextEditingController();
+
+  final Map<String, String> _langNameToCode = {
+    'English': 'en',
+    'తెలుగు (Telugu)': 'te',
+    'हिन्दी (Hindi)': 'hi',
+    'বাংলা (Bengali)': 'bn',
+    'मराठी (Marathi)': 'mr',
+    'தமிழ் (Tamil)': 'ta',
+    'اردو (Urdu)': 'ur',
+    'ગુજરાતી (Gujarati)': 'gu',
+    'ಕನ್ನಡ (Kannada)': 'kn',
+    'മലയാളം (Malayalam)': 'ml',
+    'ଓଡ଼ିଆ (Odia)': 'or',
+    'ਪੰਜਾਬੀ (Punjabi)': 'pa',
+  };
 
   final List<String> _indianLanguages = [
     'English',
@@ -75,6 +92,14 @@ class _HomeHospitalScreenState extends State<HomeHospitalScreen> {
             icon: const Icon(Icons.language, color: OprivaTheme.healthcareTeal),
             onSelected: (val) {
               setState(() => _selectedLanguage = val);
+              final code = _langNameToCode[val] ?? 'en';
+              OprivaApp.setLocale(context, Locale(code));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Language changed to $val'),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
             },
             itemBuilder: (ctx) => _indianLanguages.map((lang) {
               return PopupMenuItem(
@@ -99,7 +124,7 @@ class _HomeHospitalScreenState extends State<HomeHospitalScreen> {
               controller: _searchController,
               onChanged: (val) => _loadHospitals(val),
               decoration: InputDecoration(
-                hintText: 'Search hospital, locality, or city...',
+                hintText: AppLocalizations.tr(context, 'searchHospitalHint', fallback: 'Search hospital, locality, or city...'),
                 hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
                 prefixIcon: const Icon(Icons.search, size: 20, color: OprivaTheme.healthcareTeal),
                 filled: true,
@@ -121,9 +146,9 @@ class _HomeHospitalScreenState extends State<HomeHospitalScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Verified OP Hospitals Nearby',
-                  style: TextStyle(
+                Text(
+                  AppLocalizations.tr(context, 'verifiedHospitalsNearby', fallback: 'Verified OP Hospitals Nearby'),
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: OprivaTheme.navyDark,
@@ -285,7 +310,7 @@ class _HomeHospitalScreenState extends State<HomeHospitalScreen> {
                       ),
                     );
                   },
-                  child: const Text('Book OP'),
+                  child: Text(AppLocalizations.tr(context, 'bookOp', fallback: 'Book OP')),
                 ),
               ],
             ),

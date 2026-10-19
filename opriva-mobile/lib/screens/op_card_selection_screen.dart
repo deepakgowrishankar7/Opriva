@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/opriva_theme.dart';
 import '../models/hospital_model.dart';
+import '../core/localization/app_localizations.dart';
 import 'patient_details_screen.dart';
 
 class OpCardSelectionScreen extends StatefulWidget {
@@ -36,7 +37,7 @@ class _OpCardSelectionScreenState extends State<OpCardSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select OP Registration Card'),
+        title: Text(AppLocalizations.tr(context, 'selectCardType', fallback: 'Select OP Registration Card')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -102,9 +103,9 @@ class _OpCardSelectionScreenState extends State<OpCardSelectionScreen> {
             ),
 
             const SizedBox(height: 20),
-            const Text(
-              '1. Choose OP Consultation Window',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: OprivaTheme.navyDark),
+            Text(
+              AppLocalizations.tr(context, 'consultationWindow', fallback: '1. Choose OP Consultation Window'),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: OprivaTheme.navyDark),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -129,9 +130,9 @@ class _OpCardSelectionScreenState extends State<OpCardSelectionScreen> {
             ),
 
             const SizedBox(height: 24),
-            const Text(
-              '2. Select OP Registration Card Type',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: OprivaTheme.navyDark),
+            Text(
+              AppLocalizations.tr(context, 'selectCardType', fallback: '2. Select OP Registration Card Type'),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: OprivaTheme.navyDark),
             ),
             const SizedBox(height: 12),
 
@@ -175,7 +176,9 @@ class _OpCardSelectionScreenState extends State<OpCardSelectionScreen> {
                           runSpacing: 4,
                           children: [
                             Text(
-                              type.displayName,
+                              isSpecial
+                                  ? AppLocalizations.tr(context, 'specialCard', fallback: type.displayName)
+                                  : AppLocalizations.tr(context, 'normalCard', fallback: type.displayName),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             if (isSpecial)
@@ -186,9 +189,9 @@ class _OpCardSelectionScreenState extends State<OpCardSelectionScreen> {
                                   borderRadius: BorderRadius.circular(4),
                                   border: Border.all(color: Colors.purple.shade200),
                                 ),
-                                child: const Text(
-                                  'PRIORITY QUEUE',
-                                  style: TextStyle(
+                                child: Text(
+                                  AppLocalizations.tr(context, 'priorityQueue', fallback: 'PRIORITY QUEUE'),
+                                  style: const TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.purple,
@@ -252,9 +255,9 @@ class _OpCardSelectionScreenState extends State<OpCardSelectionScreen> {
                           ),
                         );
                       },
-                child: const Text(
-                  'Continue to Patient Details',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                child: Text(
+                  AppLocalizations.tr(context, 'continueToPatientDetails', fallback: 'Continue to Patient Details'),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
