@@ -3,26 +3,30 @@ import { Navbar } from './components/Navbar';
 import { PatientPortal } from './pages/patient/PatientPortal';
 import { ReceptionistDashboard } from './pages/receptionist/ReceptionistDashboard';
 import { ClinicalDashboard } from './pages/clinical/ClinicalDashboard';
+import { WaitingHallTvDisplay } from './pages/WaitingHallTvDisplay';
+import { HospitalStaffIndex } from './pages/HospitalStaffIndex';
 import { LanguageOnboardingModal } from './components/LanguageOnboardingModal';
 import { useAuth } from './context/AuthContext';
 import { recordsApi } from './services/api';
 import { Bell, X, Check, ShieldCheck } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'patient' | 'receptionist' | 'clinical'>('patient');
+  const { user, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState<'index' | 'patient' | 'receptionist' | 'clinical' | 'tv-display'>('index');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isLangModalOpen, setIsLangModalOpen] = useState(() => {
     return !localStorage.getItem('opriva_onboarding_language_selected');
   });
 
-  // Sync tab with user's role on role switch
+  // Sync tab with user's role on role login
   useEffect(() => {
     if (user?.role === 'ROLE_RECEPTIONIST') {
       setActiveTab('receptionist');
     } else if (user?.role === 'ROLE_CLINICIAN') {
       setActiveTab('clinical');
+    } else if (user?.role === 'ROLE_PATIENT') {
+      setActiveTab('patient');
     }
   }, [user?.role]);
 
@@ -55,25 +59,52 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    setActiveTab('index');
+  };
+
+  // 1. HOSPITAL GATEWAY INDEX
+  if (activeTab === 'index' || (!user && activeTab !== 'tv-display' && activeTab !== 'patient')) {
+    return (
+      <HospitalStaffIndex 
+        onSelectStation={(station) => {
+          setActiveTab(station);
+        }} 
+      />
+    );
+  }
+
+  // 2. WAITING HALL LIVE TV DISPLAY (Full Screen)
+  if (activeTab === 'tv-display') {
+    return (
+      <WaitingHallTvDisplay 
+        onBackToPortal={() => setActiveTab('index')} 
+      />
+    );
+  }
+
+  // 3. LOGGED IN HOSPITAL WORKSTATIONS (Patient, Receptionist, Doctor)
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       
-      {/* Opriva Navigation Bar */}
+      {/* Opriva Top Navigation Bar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         unreadNotificationsCount={unreadCount}
         onOpenNotifications={() => setIsNotifOpen(true)}
+        onReturnToIndex={() => setActiveTab('index')}
       />
 
-      {/* Main View Area */}
+      {/* Main Workstation View Area */}
       <main className="flex-1">
         {activeTab === 'patient' && <PatientPortal />}
         {activeTab === 'receptionist' && <ReceptionistDashboard />}
         {activeTab === 'clinical' && <ClinicalDashboard />}
       </main>
 
-      {/* Language Onboarding Selector (Appears for first-time users or can be triggered anytime) */}
+      {/* Language Onboarding Selector */}
       <LanguageOnboardingModal
         isOpen={isLangModalOpen}
         onClose={() => setIsLangModalOpen(false)}
@@ -148,15 +179,25 @@ export const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             <img src="/logo.png" alt="Opriva" className="w-5 h-5 object-contain" />
-            <span className="font-extrabold text-slate-800">Opriva</span>
+            <span className="font-extrabold text-slate-800">Opriva Enterprise Hospital Suite</span>
             <span>— Healthcare, Without the Wait.</span>
           </div>
           <div className="flex items-center space-x-4 text-slate-400">
-            <span>Hospital OP Registration</span>
+            <button 
+              onClick={() => setActiveTab('index')} 
+              className="text-teal-700 hover:underline font-semibold"
+            >
+              Switch Workstation
+            </button>
             <span>•</span>
-            <span>Smart Queue Management</span>
+            <span>Powered by Neon PostgreSQL</span>
             <span>•</span>
-            <span>Privacy Compliant</span>
+            <button 
+              onClick={handleLogout} 
+              className="text-rose-600 hover:underline font-semibold"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </footer>

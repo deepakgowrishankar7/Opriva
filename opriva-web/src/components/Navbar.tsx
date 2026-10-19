@@ -6,6 +6,7 @@ import {
   Building2, 
   Users, 
   Stethoscope, 
+  Tv,
   Globe, 
   LogOut, 
   Bell, 
@@ -14,10 +15,11 @@ import {
 } from 'lucide-react';
 
 interface NavbarProps {
-  activeTab: 'patient' | 'receptionist' | 'clinical';
-  setActiveTab: (tab: 'patient' | 'receptionist' | 'clinical') => void;
+  activeTab: 'patient' | 'receptionist' | 'clinical' | 'tv-display';
+  setActiveTab: (tab: 'patient' | 'receptionist' | 'clinical' | 'tv-display') => void;
   unreadNotificationsCount?: number;
   onOpenNotifications?: () => void;
+  onReturnToIndex?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   unreadNotificationsCount = 0,
   onOpenNotifications,
+  onReturnToIndex,
 }) => {
   const { currentLanguage, setLanguage, t } = useLanguage();
   const { user, logout, switchDemoRole } = useAuth();
@@ -37,7 +40,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between h-18">
           
           {/* Opriva Brand Identity */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('patient')}>
+          <div 
+            className="flex items-center space-x-3 cursor-pointer" 
+            onClick={() => {
+              if (onReturnToIndex) onReturnToIndex();
+              else setActiveTab('patient');
+            }}
+            title="Return to Hospital Portal Gateway"
+          >
             <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-teal-50 to-white p-1 border border-teal-100 shadow-sm flex items-center justify-center overflow-hidden">
               <img 
                 src="/logo.png" 
@@ -63,13 +73,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setActiveTab('patient');
                 if (user?.role !== 'ROLE_PATIENT') switchDemoRole('ROLE_PATIENT');
               }}
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'patient'
                   ? 'bg-white text-teal-800 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Building2 className="w-4 h-4 text-teal-600" />
+              <Building2 className="w-3.5 h-3.5 text-teal-600" />
               <span>Patient Portal</span>
             </button>
 
@@ -78,14 +88,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setActiveTab('receptionist');
                 if (user?.role !== 'ROLE_RECEPTIONIST') switchDemoRole('ROLE_RECEPTIONIST');
               }}
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'receptionist'
                   ? 'bg-white text-teal-800 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Users className="w-4 h-4 text-sky-600" />
-              <span>OP Receptionist</span>
+              <Users className="w-3.5 h-3.5 text-sky-600" />
+              <span>OP Reception</span>
             </button>
 
             <button
@@ -93,14 +103,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setActiveTab('clinical');
                 if (user?.role !== 'ROLE_CLINICIAN') switchDemoRole('ROLE_CLINICIAN');
               }}
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'clinical'
                   ? 'bg-white text-teal-800 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Stethoscope className="w-4 h-4 text-indigo-600" />
-              <span>Clinical Interface</span>
+              <Stethoscope className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Doctor OPD</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('tv-display')}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'tv-display'
+                  ? 'bg-white text-sky-800 shadow-sm font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Tv className="w-3.5 h-3.5 text-sky-600" />
+              <span>Waiting TV</span>
             </button>
           </nav>
 

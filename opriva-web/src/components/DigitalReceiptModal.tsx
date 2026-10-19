@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Printer, CheckCircle, ShieldCheck } from 'lucide-react';
+import { X, Printer, CheckCircle, ShieldCheck, MessageSquare } from 'lucide-react';
 
 interface DigitalReceiptModalProps {
   isOpen: boolean;
@@ -27,6 +27,20 @@ export const DigitalReceiptModal: React.FC<DigitalReceiptModalProps> = ({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleWhatsAppShare = () => {
+    const text = encodeURIComponent(
+      `🏥 *${receipt.hospitalName} - Opriva OP Token*\n\n` +
+      `🎫 *Token:* ${receipt.tokenNumber}\n` +
+      `👤 *Patient:* ${receipt.patientName}\n` +
+      `🏷️ *Category:* ${receipt.registrationTypeName}\n` +
+      `📋 *OP Reg No:* ${receipt.opRegistrationNumber}\n` +
+      `💳 *Fee Paid:* ₹${receipt.feePaid}\n\n` +
+      `⚡ *Live Queue Tracking:* https://opriva.in/q/${receipt.tokenNumber}\n` +
+      `_Healthcare, Without the Wait._`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
   return (
@@ -115,20 +129,30 @@ export const DigitalReceiptModal: React.FC<DigitalReceiptModalProps> = ({
         </div>
 
         {/* Modal Actions */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-3">
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
           <button
-            onClick={handlePrint}
-            className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition"
+            onClick={handleWhatsAppShare}
+            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-sm"
           >
-            <Printer className="w-4 h-4" />
-            <span>Print / Save PDF</span>
+            <MessageSquare className="w-4 h-4" />
+            <span>Send to WhatsApp</span>
           </button>
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition shadow-sm"
-          >
-            Done
-          </button>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handlePrint}
+              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Thermal Slip</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition shadow-sm"
+            >
+              Done
+            </button>
+          </div>
         </div>
 
       </div>
