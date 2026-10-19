@@ -31,31 +31,30 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile | null>({
-    userId: 'usr-pat-001',
-    fullName: 'Ananya Reddy',
-    email: 'patient@opriva.com',
-    phone: '9876543212',
-    role: 'ROLE_PATIENT',
-    preferredLanguage: 'en',
-  });
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [token, setTokenState] = useState<string | null>(getAuthToken());
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchProfile = async () => {
     try {
       const profile = await authApi.getMe();
-      setUser(profile);
+      if (profile.role === 'ROLE_RECEPTIONIST') {
+        setUser(profile);
+      } else {
+        removeAuthToken();
+        setTokenState(null);
+        setUser(null);
+      }
     } catch {
-      // keep fallback
+      removeAuthToken();
+      setTokenState(null);
+      setUser(null);
     }
   };
 
   useEffect(() => {
     if (token) {
       fetchProfile();
-    } else {
-      switchDemoRole('ROLE_PATIENT');
     }
   }, []);
 
