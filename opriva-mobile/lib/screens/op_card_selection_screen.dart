@@ -166,34 +166,39 @@ class _OpCardSelectionScreenState extends State<OpCardSelectionScreen> {
                   },
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            type.displayName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                          ),
-                          if (isSpecial) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.purple.shade50,
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: Colors.purple.shade200),
-                              ),
-                              child: const Text(
-                                'PRIORITY QUEUE',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple,
+                      Expanded(
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            Text(
+                              type.displayName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            if (isSpecial)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple.shade50,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: Colors.purple.shade200),
+                                ),
+                                child: const Text(
+                                  'PRIORITY QUEUE',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple,
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
-                        ],
+                        ),
                       ),
+                      const SizedBox(width: 6),
                       Text(
                         '₹${type.feeAmount.toInt()}',
                         style: const TextStyle(
