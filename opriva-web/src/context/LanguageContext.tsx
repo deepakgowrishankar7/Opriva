@@ -5,14 +5,14 @@ interface LanguageContextType {
   currentLanguage: string;
   isRtl: boolean;
   setLanguage: (code: string) => void;
-  t: (key: string) => string;
+  t: (key: string, fallback?: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
   currentLanguage: 'en',
   isRtl: false,
   setLanguage: () => {},
-  t: (key: string) => key,
+  t: (key: string, fallback?: string) => fallback || key,
 });
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -33,7 +33,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCurrentLanguageState(code);
   };
 
-  const t = (key: string): string => {
+  const t = (key: string, fallback?: string): string => {
     const langDict = translations[currentLanguage];
     if (langDict && langDict[key]) {
       return langDict[key];
@@ -43,7 +43,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (fallbackDict && fallbackDict[key]) {
       return fallbackDict[key];
     }
-    return key;
+    return fallback || key;
   };
 
   return (

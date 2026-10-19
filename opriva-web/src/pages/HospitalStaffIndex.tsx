@@ -434,14 +434,10 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
 
           {/* Quick Info & Sign In Button */}
           <div className="flex items-center space-x-4">
-            <div className="hidden lg:flex items-center space-x-4 text-xs text-slate-600 border-r border-slate-200 pr-5">
+            <div className="hidden lg:flex items-center space-x-3 text-xs text-slate-600 border-r border-slate-200 pr-5">
               <div className="flex items-center space-x-1.5">
                 <ShieldCheck className="w-4 h-4 text-teal-600" />
                 <span className="font-semibold text-slate-700">ABDM & HIPAA Compliant</span>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <Building2 className="w-4 h-4 text-teal-600" />
-                <span>Primary Partner: <strong>Apollo Health City</strong></span>
               </div>
             </div>
 
@@ -506,22 +502,14 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
           </div>
 
           {/* Quick CTA Actions */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-10 flex items-center justify-center">
             <button
               onClick={() => setIsLoginModalOpen(true)}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-black text-sm shadow-lg shadow-teal-600/25 transition flex items-center justify-center space-x-2.5 cursor-pointer"
+              className="px-8 py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-black text-sm shadow-lg shadow-teal-600/25 transition flex items-center justify-center space-x-2.5 cursor-pointer"
             >
               <Building2 className="w-4 h-4" />
               <span>Select Hospital & Sign In</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => onSelectStation('tv-display')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-sm shadow-xs transition flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <Tv className="w-4 h-4 text-sky-600" />
-              <span>Preview Live Waiting Lounge TV</span>
             </button>
           </div>
 
@@ -645,8 +633,11 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
             </div>
 
             <button
-              onClick={() => onSelectStation('tv-display')}
-              className="mt-6 w-full py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold text-xs transition flex items-center justify-center gap-1.5"
+              onClick={() => {
+                handleRoleSwitch('tv');
+                setIsLoginModalOpen(true);
+              }}
+              className="mt-6 w-full py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>Launch Live TV Board</span>
               <ChevronRight className="w-3.5 h-3.5" />

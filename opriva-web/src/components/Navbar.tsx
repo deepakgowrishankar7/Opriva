@@ -66,51 +66,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Role Navigation Tabs */}
-          <nav className="hidden md:flex items-center space-x-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-
-            <button
-              onClick={() => {
-                setActiveTab('receptionist');
-                if (user?.role !== 'ROLE_RECEPTIONIST') switchDemoRole('ROLE_RECEPTIONIST');
-              }}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'receptionist'
-                  ? 'bg-white text-teal-800 shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5 text-sky-600" />
-              <span>OP Reception</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('clinical');
-                if (user?.role !== 'ROLE_CLINICIAN') switchDemoRole('ROLE_CLINICIAN');
-              }}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'clinical'
-                  ? 'bg-white text-teal-800 shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Stethoscope className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Doctor OPD</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('tv-display')}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'tv-display'
-                  ? 'bg-white text-sky-800 shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Tv className="w-3.5 h-3.5 text-sky-600" />
-              <span>Waiting TV</span>
-            </button>
-          </nav>
+          {/* Active Workstation Indicator (Role Restricted) */}
+          <div className="hidden md:flex items-center">
+            {activeTab === 'receptionist' && (
+              <div className="flex items-center space-x-2 px-4 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 text-xs font-extrabold shadow-2xs">
+                <Users className="w-4 h-4 text-teal-600" />
+                <span>OP Reception Desk • Counter 1</span>
+              </div>
+            )}
+            {activeTab === 'clinical' && (
+              <div className="flex items-center space-x-2 px-4 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-extrabold shadow-2xs">
+                <Stethoscope className="w-4 h-4 text-indigo-600" />
+                <span>Doctor OPD Chamber • Room 102</span>
+              </div>
+            )}
+            {activeTab === 'tv-display' && (
+              <div className="flex items-center space-x-2 px-4 py-1.5 rounded-xl bg-sky-50 border border-sky-200 text-sky-900 text-xs font-extrabold shadow-2xs">
+                <Tv className="w-4 h-4 text-sky-600" />
+                <span>Waiting Lounge TV Display</span>
+              </div>
+            )}
+          </div>
 
           {/* Right Controls: Language Selector, Notifications, User */}
           <div className="flex items-center space-x-3">

@@ -50,7 +50,8 @@ export const WaitingHallTvDisplay: React.FC<WaitingHallTvDisplayProps> = ({ onBa
       const data = await queueApi.getReceptionistOverview(hospitalId);
       setOverview(data);
 
-      const called = data.activeTokens.filter((t: any) => t.state === 'CALLED');
+      const list: any[] = data.queueList || [];
+      const called = list.filter((t: any) => t.queueState === 'CALLED');
       if (called.length > 0) {
         setCalledHistory(called);
       }
@@ -61,15 +62,18 @@ export const WaitingHallTvDisplay: React.FC<WaitingHallTvDisplayProps> = ({ onBa
 
   useEffect(() => {
     fetchLiveStatus();
-    const interval = setInterval(fetchLiveStatus, 5000);
+    const interval = setInterval(fetchLiveStatus, 3000);
     const clockInterval = setInterval(() => setCurrentTime(new Date()), 1000);
 
     // WebSocket STOMP listener
     webSocketService.connect(() => {
-      webSocketService.subscribeHospitalQueue(hospitalId, (update) => {
+      webSocketService.subscribeHospitalQueue(hospitalId, (update: any) => {
         fetchLiveStatus();
-        if (update.state === 'CALLED') {
-          playChimeAndVoice(update.tokenNumber, update.counter || 'Room 102');
+        const updateStr = typeof update === 'string' ? update : JSON.stringify(update);
+        if (updateStr.includes('CALLED') || updateStr.includes('TOKEN_CALLED')) {
+          const match = updateStr.match(/[A-Z]-\d+/);
+          const tokenNum = match ? match[0] : '';
+          playChimeAndVoice(tokenNum || 'Next Patient', 'Room 102 (Dr. Rajesh Sharma)');
         }
       });
     });
@@ -80,19 +84,18 @@ export const WaitingHallTvDisplay: React.FC<WaitingHallTvDisplayProps> = ({ onBa
     };
   }, []);
 
-  const currentlyServing = overview?.activeTokens?.find((t: any) => t.state === 'CALLED') || {
-    tokenNumber: 'S-201',
-    typeDisplayName: 'Special Priority OP Card',
-    assignedCounter: 'Room 102 (Dr. Rajesh Sharma)',
-    patientName: 'Ananya Reddy',
-  };
+  const tokens: any[] = overview?.queueList || [];
 
-  const waitingTokens = overview?.activeTokens?.filter((t: any) => t.state === 'WAITING') || [
-    { tokenNumber: 'N-101', typeDisplayName: 'Normal OP', feeAmount: 350 },
-    { tokenNumber: 'N-102', typeDisplayName: 'Normal OP', feeAmount: 350 },
-    { tokenNumber: 'S-202', typeDisplayName: 'Special Priority OP', feeAmount: 750 },
-    { tokenNumber: 'N-103', typeDisplayName: 'Normal OP', feeAmount: 350 },
-  ];
+  const currentlyServing = tokens.find((t: any) => t.queueState === 'CALLED') 
+    || tokens.find((t: any) => t.queueState === 'IN_CONSULTATION') 
+    || (tokens.length > 0 ? tokens[0] : {
+      tokenNumber: 'S-201',
+      registrationTypeName: 'Special Priority OP Card',
+      assignedCounter: 'Room 102 • Dr. Rajesh Sharma',
+      patientName: 'Ananya Reddy',
+    });
+
+  const waitingTokens = tokens.filter((t: any) => t.queueState === 'WAITING');
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col font-sans select-none overflow-hidden">
@@ -223,7 +226,8 @@ export const WaitingHallTvDisplay: React.FC<WaitingHallTvDisplayProps> = ({ onBa
 
           <div className="flex-1 overflow-y-auto py-4 space-y-3">
             {waitingTokens.slice(0, 6).map((item: any, idx: number) => {
-              const isSpecial = item.typeDisplayName?.toLowerCase().includes('special');
+              const cardName = item.registrationTypeName || item.typeDisplayName || 'Normal OP Card';
+              const isSpecial = cardName.toLowerCase().includes('special');
               return (
                 <div
                   key={idx}
@@ -242,7 +246,7 @@ export const WaitingHallTvDisplay: React.FC<WaitingHallTvDisplayProps> = ({ onBa
                         {item.tokenNumber}
                       </div>
                       <span className="text-[11px] text-slate-400 block mt-0.5">
-                        {item.typeDisplayName || 'Normal OP Card'}
+                        {cardName}
                       </span>
                     </div>
                   </div>
