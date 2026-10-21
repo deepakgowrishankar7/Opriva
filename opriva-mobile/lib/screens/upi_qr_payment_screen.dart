@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/theme/opriva_theme.dart';
 import '../models/hospital_model.dart';
+import '../core/services/local_ticket_storage_service.dart';
 import 'live_queue_tracker_screen.dart';
 
 class UpiQrPaymentScreen extends StatefulWidget {
@@ -69,6 +70,25 @@ class _UpiQrPaymentScreenState extends State<UpiQrPaymentScreen> {
     final isSpecial = widget.cardType.typeCode == 'SPECIAL';
     final tokenNo = isSpecial ? 'S-205' : 'N-108';
     final opRegNo = 'OPR-${DateTime.now().year}${(DateTime.now().month).toString().padLeft(2, '0')}${(DateTime.now().day).toString().padLeft(2, '0')}-${(1000 + (DateTime.now().millisecond % 9000))}';
+
+    // Save ticket directly to THIS device's local storage
+    LocalTicketStorageService.saveTicket(
+      LocalPatientTicket(
+        hospitalId: widget.hospital.id,
+        hospitalName: widget.hospital.name,
+        branchName: widget.hospital.locality,
+        opRegistrationNumber: opRegNo,
+        tokenNumber: tokenNo,
+        cardTypeName: widget.cardType.displayName,
+        patientName: widget.patientName,
+        feePaid: widget.cardType.feeAmount,
+        currentTokenCalled: isSpecial ? 'S-202' : 'N-103',
+        patientsAhead: isSpecial ? 2 : 4,
+        estWaitMinutes: isSpecial ? 12 : 24,
+        receptionistPhone: widget.hospital.receptionistPhone ?? '+91-40-2360-7777',
+        bookedAt: DateTime.now(),
+      ),
+    );
 
     Navigator.pushReplacement(
       context,

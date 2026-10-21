@@ -11,32 +11,29 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Clock, 
-  Sparkles,
-  Phone,
-  Eye,
-  EyeOff,
-  ChevronRight,
-  MapPin,
-  Check,
-  AlertTriangle,
-  QrCode,
-  FileText,
-  Volume2,
-  Activity,
-  Layers,
-  HeartPulse,
-  Smartphone,
-  ExternalLink,
-  Plus,
-  Settings,
-  X
+  Sparkles, 
+  Phone, 
+  Eye, 
+  EyeOff, 
+  ChevronRight, 
+  MapPin, 
+  Check, 
+  AlertTriangle, 
+  QrCode, 
+  FileText, 
+  Volume2, 
+  Activity, 
+  Layers, 
+  HeartPulse, 
+  Smartphone, 
+  ExternalLink, 
+  X 
 } from 'lucide-react';
 import { 
   HospitalNetwork, 
   HospitalBranch, 
   getHospitalNetworks 
 } from '../services/hospitalDirectoryService';
-import { HospitalManagementModal } from '../components/HospitalManagementModal';
 
 interface HospitalStaffIndexProps {
   onSelectStation: (station: 'receptionist' | 'clinical' | 'tv-display') => void;
@@ -47,7 +44,6 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
 
   // Dynamic Hospital Directory from Service
   const [hospitalNetworks, setHospitalNetworks] = useState<HospitalNetwork[]>(() => getHospitalNetworks());
-  const [isManagementOpen, setIsManagementOpen] = useState(false);
 
   // Sync hospital networks on storage events or modal updates
   const reloadHospitalNetworks = () => {
@@ -271,19 +267,6 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
               </div>
             </div>
 
-            {/* Hospital Network Management Button */}
-            <button
-              onClick={() => setIsManagementOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs transition flex items-center space-x-2 cursor-pointer shadow-xs"
-              title="Manage Partnered Hospitals, Branches & OPD Chambers"
-            >
-              <Settings className="w-4 h-4 text-teal-700" />
-              <span className="hidden sm:inline">Manage Hospitals</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-teal-200/80 text-teal-900 text-[10px] font-bold">
-                {hospitalNetworks.length}
-              </span>
-            </button>
-
             {/* Prominent Sign In Button */}
             <button
               onClick={() => setIsLoginModalOpen(true)}
@@ -501,16 +484,9 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
               </h2>
             </div>
             <div className="flex items-center space-x-3">
-              <span className="text-xs text-slate-500 hidden sm:inline">
+              <span className="text-xs text-slate-500">
                 {hospitalNetworks.length} Networks • {hospitalNetworks.reduce((acc, h) => acc + h.branches.length, 0)} Active Branches
               </span>
-              <button
-                onClick={() => setIsManagementOpen(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Onboard Hospital</span>
-              </button>
             </div>
           </div>
 
@@ -610,22 +586,9 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
               
               {/* STEP 1: SELECT HOSPITAL NETWORK */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-800">
-                    1. Hospital Network
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLoginModalOpen(false);
-                      setIsManagementOpen(true);
-                    }}
-                    className="text-[11px] font-bold text-teal-700 hover:text-teal-900 underline flex items-center space-x-1"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>+ Add New Hospital</span>
-                  </button>
-                </div>
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                  1. Hospital Network
+                </label>
                 <select
                   value={selectedHospitalId}
                   onChange={(e) => handleHospitalChange(e.target.value)}
@@ -823,28 +786,70 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
 
                 </form>
               ) : (
-                /* WAITING HALL TV 1-CLICK LAUNCH */
-                <div className="text-center py-4 space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto border border-sky-200">
-                    <Tv className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-900">Waiting Hall TV Lounge Monitor</h4>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Launch the public display for {selectedBranch.name}. Features automated audio chimes and voice announcements in English, Hindi, and Telugu.
+                /* WAITING HALL TV DISPLAY - AUTHENTICATED BY RECEPTIONIST CREDENTIALS */
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!emailInput.includes('@')) {
+                      setErrorMsg('Please enter valid Receptionist staff email to authorize TV Lounge Monitor.');
+                      return;
+                    }
+                    setIsLoginModalOpen(false);
+                    onSelectStation('tv-display');
+                  }} 
+                  className="space-y-4 pt-1"
+                >
+                  <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 text-sky-950 text-xs">
+                    <div className="flex items-center space-x-2 font-bold mb-1">
+                      <Tv className="w-4 h-4 text-sky-600" />
+                      <span>Reception-Authorized Lounge TV Display</span>
+                    </div>
+                    <p className="text-[11px] text-sky-800 leading-relaxed">
+                      Per clinical security policy, the public Waiting Lounge TV display for {selectedBranch.name} is synchronized and authorized under Receptionist credentials.
                     </p>
                   </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Authorizing Receptionist Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Desk Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="password"
+                        value={passwordInput}
+                        onChange={(e) => setPasswordInput(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <button
-                    onClick={() => {
-                      setIsLoginModalOpen(false);
-                      onSelectStation('tv-display');
-                    }}
-                    className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md shadow-sky-600/20 transition flex items-center justify-center space-x-2"
+                    type="submit"
+                    className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md shadow-sky-600/20 transition flex items-center justify-center space-x-2 cursor-pointer"
                   >
-                    <span>Launch Full Screen TV Display</span>
+                    <Tv className="w-4 h-4" />
+                    <span>Authorize & Launch Full Screen TV Display</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
-                </div>
+                </form>
               )}
 
             </div>
@@ -858,13 +863,6 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
           </div>
         </div>
       )}
-
-      {/* 7. HOSPITAL & BRANCH MANAGEMENT MODAL */}
-      <HospitalManagementModal
-        isOpen={isManagementOpen}
-        onClose={() => setIsManagementOpen(false)}
-        onHospitalsChanged={reloadHospitalNetworks}
-      />
 
     </div>
   );

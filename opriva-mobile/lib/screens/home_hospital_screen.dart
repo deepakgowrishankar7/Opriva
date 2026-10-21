@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import '../core/theme/opriva_theme.dart';
 import '../models/hospital_model.dart';
 import '../core/services/api_service.dart';
+import '../core/services/local_ticket_storage_service.dart';
 import '../core/localization/app_localizations.dart';
 import '../main.dart';
 import 'op_card_selection_screen.dart';
+import 'live_queue_tracker_screen.dart';
 
 class HomeHospitalScreen extends StatefulWidget {
   const HomeHospitalScreen({Key? key}) : super(key: key);
@@ -165,6 +167,83 @@ class _HomeHospitalScreenState extends State<HomeHospitalScreen> {
               ],
             ),
           ),
+
+          // Active Ticket Banner (ONLY shown if patient has booked a ticket on THIS device)
+          if (LocalTicketStorageService.getActiveTicket() != null) ...[
+            Builder(builder: (ctx) {
+              final active = LocalTicketStorageService.getActiveTicket()!;
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (c) => LiveQueueTrackerScreen(
+                        hospitalName: active.hospitalName,
+                        opRegistrationNumber: active.opRegistrationNumber,
+                        tokenNumber: active.tokenNumber,
+                        cardTypeName: active.cardTypeName,
+                        patientName: active.patientName,
+                        feePaid: active.feePaid,
+                        currentTokenCalled: active.currentTokenCalled,
+                        patientsAhead: active.patientsAhead,
+                        estWaitMinutes: active.estWaitMinutes,
+                        receptionistPhone: active.receptionistPhone,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF86EFAC)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: OprivaTheme.healthcareTeal,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          active.tokenNumber,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Active Token: ${active.hospitalName}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF14532D),
+                              ),
+                            ),
+                            Text(
+                              '${active.patientsAhead} patients ahead • Est. ${active.estWaitMinutes} mins',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: OprivaTheme.healthcareTeal),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
 
           // Hospital List
           Expanded(

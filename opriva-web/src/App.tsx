@@ -5,6 +5,7 @@ import { ReceptionistDashboard } from './pages/receptionist/ReceptionistDashboar
 import { ClinicalDashboard } from './pages/clinical/ClinicalDashboard';
 import { WaitingHallTvDisplay } from './pages/WaitingHallTvDisplay';
 import { HospitalStaffIndex } from './pages/HospitalStaffIndex';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { LanguageOnboardingModal } from './components/LanguageOnboardingModal';
 import { useAuth } from './context/AuthContext';
 import { recordsApi } from './services/api';
@@ -12,7 +13,10 @@ import { Bell, X, Check, ShieldCheck } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'index' | 'receptionist' | 'clinical' | 'tv-display'>('index');
+  const [activeTab, setActiveTab] = useState<'index' | 'receptionist' | 'clinical' | 'tv-display' | 'admin'>(() => {
+    if (window.location.hash === '#admin') return 'admin';
+    return 'index';
+  });
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isLangModalOpen, setIsLangModalOpen] = useState(() => {
@@ -62,7 +66,19 @@ export const App: React.FC = () => {
     setActiveTab('index');
   };
 
-  // 1. HOSPITAL GATEWAY INDEX
+  // 1. CREATOR SUPER-ADMIN CONSOLE (URL hash #admin or route switch)
+  if (activeTab === 'admin') {
+    return (
+      <AdminDashboardPage 
+        onBackToPortal={() => {
+          window.location.hash = '';
+          setActiveTab('index');
+        }}
+      />
+    );
+  }
+
+  // 2. HOSPITAL GATEWAY INDEX
   if (activeTab === 'index' || (!user && activeTab !== 'tv-display')) {
     return (
       <HospitalStaffIndex 
@@ -73,7 +89,7 @@ export const App: React.FC = () => {
     );
   }
 
-  // 2. WAITING HALL LIVE TV DISPLAY (Full Screen)
+  // 3. WAITING HALL LIVE TV DISPLAY (Full Screen)
   if (activeTab === 'tv-display') {
     return (
       <WaitingHallTvDisplay 
@@ -82,7 +98,7 @@ export const App: React.FC = () => {
     );
   }
 
-  // 3. LOGGED IN HOSPITAL WORKSTATIONS (Receptionist Desk or Doctor OPD Chamber)
+  // 4. LOGGED IN HOSPITAL WORKSTATIONS (Receptionist Desk or Doctor OPD Chamber)
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       
