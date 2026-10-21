@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   Building2, 
@@ -27,242 +27,70 @@ import {
   HeartPulse,
   Smartphone,
   ExternalLink,
+  Plus,
+  Settings,
   X
 } from 'lucide-react';
+import { 
+  HospitalNetwork, 
+  HospitalBranch, 
+  getHospitalNetworks 
+} from '../services/hospitalDirectoryService';
+import { HospitalManagementModal } from '../components/HospitalManagementModal';
 
 interface HospitalStaffIndexProps {
   onSelectStation: (station: 'receptionist' | 'clinical' | 'tv-display') => void;
 }
 
-// Multi-Hospital & Multi-Branch Enterprise Network Definition
-interface HospitalBranch {
-  id: string;
-  name: string;
-  locality: string;
-  city: string;
-  state: string;
-  counters: string[];
-  doctorRooms: string[];
-  receptionistEmail: string;
-  doctorEmail: string;
-  doctorName: string;
-  department: string;
-  status: 'ACTIVE' | 'ONBOARDING';
-}
-
-interface HospitalNetwork {
-  id: string;
-  name: string;
-  code: string;
-  tagline: string;
-  status: 'ACTIVE' | 'PILOT';
-  badge: string;
-  branches: HospitalBranch[];
-}
-
-const HOSPITAL_NETWORKS: HospitalNetwork[] = [
-  {
-    id: 'apollo',
-    name: 'Apollo Hospitals Enterprise',
-    code: 'APOLLO',
-    tagline: 'Touched By A Billion Lives',
-    status: 'ACTIVE',
-    badge: 'Primary Partner Network',
-    branches: [
-      {
-        id: 'apollo-hyd-jubilee',
-        name: 'Apollo Health City (Jubilee Hills)',
-        locality: 'Road No. 72, Film Nagar',
-        city: 'Hyderabad',
-        state: 'Telangana',
-        counters: [
-          'Counter 1 • General OP Desk',
-          'Counter 2 • Special Priority & Senior Care',
-          'Counter 3 • Cash & Billing Desk'
-        ],
-        doctorRooms: [
-          'Room 102 • Dr. Rajesh Sharma (General Medicine)',
-          'Room 104 • Dr. Priya Nair (Pediatrics)',
-          'Room 106 • Dr. Arvind Rao (Cardiology)'
-        ],
-        receptionistEmail: 'receptionist@apollo.opriva.com',
-        doctorEmail: 'dr.sharma@apollo.opriva.com',
-        doctorName: 'Dr. Rajesh Sharma, MD',
-        department: 'General Medicine & OPD Diagnostics',
-        status: 'ACTIVE'
-      },
-      {
-        id: 'apollo-blr-bannerghatta',
-        name: 'Apollo Hospital (Bannerghatta Road)',
-        locality: 'Bannerghatta Main Road',
-        city: 'Bengaluru',
-        state: 'Karnataka',
-        counters: [
-          'Counter 1 • OPD Reception Desk',
-          'Counter 2 • Priority Queue Counter'
-        ],
-        doctorRooms: [
-          'Room 201 • Dr. Ramesh Babu (Internal Medicine)',
-          'Room 203 • Dr. Suman Reddy (Orthopedics)'
-        ],
-        receptionistEmail: 'reception.blr@apollo.opriva.com',
-        doctorEmail: 'dr.ramesh@apollo.opriva.com',
-        doctorName: 'Dr. Ramesh Babu, MS',
-        department: 'Internal Medicine',
-        status: 'ACTIVE'
-      },
-      {
-        id: 'apollo-chn-greams',
-        name: 'Apollo Main Hospital (Greams Road)',
-        locality: 'Greams Lane, Thousand Lights',
-        city: 'Chennai',
-        state: 'Tamil Nadu',
-        counters: [
-          'Counter 1 • Outpatient Registration'
-        ],
-        doctorRooms: [
-          'Room 101 • Dr. Meenakshi Sundaram (General OPD)'
-        ],
-        receptionistEmail: 'reception.chn@apollo.opriva.com',
-        doctorEmail: 'dr.meenakshi@apollo.opriva.com',
-        doctorName: 'Dr. Meenakshi Sundaram',
-        department: 'General Medicine',
-        status: 'ACTIVE'
-      },
-      {
-        id: 'apollo-del-sarita-vihar',
-        name: 'Indraprastha Apollo Hospitals',
-        locality: 'Delhi-Mathura Road, Sarita Vihar',
-        city: 'New Delhi',
-        state: 'Delhi NCR',
-        counters: [
-          'Counter 1 • Central OPD Desk'
-        ],
-        doctorRooms: [
-          'Room 305 • Dr. Vikram Sethi (Consultant Physician)'
-        ],
-        receptionistEmail: 'reception.del@apollo.opriva.com',
-        doctorEmail: 'dr.sethi@apollo.opriva.com',
-        doctorName: 'Dr. Vikram Sethi',
-        department: 'Consultant Medicine',
-        status: 'ACTIVE'
-      }
-    ]
-  },
-  {
-    id: 'aiims',
-    name: 'AIIMS (All India Institute of Medical Sciences)',
-    code: 'AIIMS',
-    tagline: 'Apex Public Healthcare & Research',
-    status: 'PILOT',
-    badge: 'Govt. ABDM Partner Pilot',
-    branches: [
-      {
-        id: 'aiims-del-ansari',
-        name: 'AIIMS Main OPD Center (Ansari Nagar)',
-        locality: 'Sri Aurobindo Marg, Ansari Nagar East',
-        city: 'New Delhi',
-        state: 'Delhi NCR',
-        counters: ['Counter 1 • Rajkumari Amrit Kaur OPD Desk'],
-        doctorRooms: ['Chamber 12 • Senior Resident Physician'],
-        receptionistEmail: 'opd.reception@aiims.edu',
-        doctorEmail: 'dr.kumar@aiims.edu',
-        doctorName: 'Dr. A. Kumar, MD',
-        department: 'Central OPD Block',
-        status: 'ONBOARDING'
-      },
-      {
-        id: 'aiims-rishikesh',
-        name: 'AIIMS Rishikesh Outpatient Block',
-        locality: 'Virbhadra Road',
-        city: 'Rishikesh',
-        state: 'Uttarakhand',
-        counters: ['Counter 1 • General OP Desk'],
-        doctorRooms: ['Room 108 • Clinical Consultant'],
-        receptionistEmail: 'reception@aiimsrishikesh.edu',
-        doctorEmail: 'dr.shukla@aiimsrishikesh.edu',
-        doctorName: 'Dr. P. Shukla',
-        department: 'Clinical OPD',
-        status: 'ONBOARDING'
-      }
-    ]
-  },
-  {
-    id: 'manipal',
-    name: 'Manipal Hospitals Network',
-    code: 'MANIPAL',
-    tagline: 'Life’s On — Clinical Excellence',
-    status: 'PILOT',
-    badge: 'Onboarding Network',
-    branches: [
-      {
-        id: 'manipal-blr-oar',
-        name: 'Manipal Hospital (Old Airport Road)',
-        locality: 'HAL Airport Road, Kodihalli',
-        city: 'Bengaluru',
-        state: 'Karnataka',
-        counters: ['Counter 1 • OPD Care Desk'],
-        doctorRooms: ['Room 114 • Dr. K. Shetty (General Practice)'],
-        receptionistEmail: 'reception.oar@manipal.opriva.com',
-        doctorEmail: 'dr.shetty@manipal.opriva.com',
-        doctorName: 'Dr. K. Shetty',
-        department: 'OPD Clinical Services',
-        status: 'ONBOARDING'
-      },
-      {
-        id: 'manipal-blr-whitefield',
-        name: 'Manipal Hospital (Whitefield)',
-        locality: 'ITPL Main Road',
-        city: 'Bengaluru',
-        state: 'Karnataka',
-        counters: ['Counter 1 • OP Registration'],
-        doctorRooms: ['Room 202 • OPD Consultant'],
-        receptionistEmail: 'reception.wf@manipal.opriva.com',
-        doctorEmail: 'dr.anand@manipal.opriva.com',
-        doctorName: 'Dr. V. Anand',
-        department: 'General OPD',
-        status: 'ONBOARDING'
-      }
-    ]
-  },
-  {
-    id: 'fortis',
-    name: 'Fortis Healthcare',
-    code: 'FORTIS',
-    tagline: 'Saving and Enriching Lives',
-    status: 'PILOT',
-    badge: 'Partner Integration',
-    branches: [
-      {
-        id: 'fortis-ggn-fmri',
-        name: 'Fortis Memorial Research Institute (FMRI)',
-        locality: 'Sector 44, Opposite HUDA City Centre',
-        city: 'Gurugram',
-        state: 'Haryana',
-        counters: ['Counter 1 • OPD Desk'],
-        doctorRooms: ['Room 105 • Consultant Physician'],
-        receptionistEmail: 'reception.fmri@fortis.opriva.com',
-        doctorEmail: 'dr.kapoor@fortis.opriva.com',
-        doctorName: 'Dr. N. Kapoor',
-        department: 'Consultant OPD',
-        status: 'ONBOARDING'
-      }
-    ]
-  }
-];
-
 export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelectStation }) => {
   const { login, switchDemoRole } = useAuth();
+
+  // Dynamic Hospital Directory from Service
+  const [hospitalNetworks, setHospitalNetworks] = useState<HospitalNetwork[]>(() => getHospitalNetworks());
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
+
+  // Sync hospital networks on storage events or modal updates
+  const reloadHospitalNetworks = () => {
+    const list = getHospitalNetworks();
+    setHospitalNetworks([...list]);
+  };
+
+  useEffect(() => {
+    const handleUpdate = () => reloadHospitalNetworks();
+    window.addEventListener('opriva-hospitals-updated', handleUpdate);
+    return () => window.removeEventListener('opriva-hospitals-updated', handleUpdate);
+  }, []);
 
   // Login Modal & Selection States
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   
   // Hospital and Branch Selection
-  const [selectedHospitalId, setSelectedHospitalId] = useState<string>('apollo');
-  const selectedHospital = HOSPITAL_NETWORKS.find(h => h.id === selectedHospitalId) || HOSPITAL_NETWORKS[0];
+  const [selectedHospitalId, setSelectedHospitalId] = useState<string>(() => hospitalNetworks[0]?.id || 'apollo');
+  const selectedHospital = hospitalNetworks.find(h => h.id === selectedHospitalId) || hospitalNetworks[0] || {
+    id: 'apollo',
+    name: 'Apollo Hospitals Enterprise',
+    code: 'APOLLO',
+    tagline: 'Healthcare',
+    status: 'ACTIVE',
+    badge: 'Partner',
+    branches: []
+  };
   
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('apollo-hyd-jubilee');
-  const selectedBranch = selectedHospital.branches.find(b => b.id === selectedBranchId) || selectedHospital.branches[0];
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => selectedHospital.branches[0]?.id || 'apollo-hyd-jubilee');
+  const selectedBranch = selectedHospital.branches.find(b => b.id === selectedBranchId) || selectedHospital.branches[0] || {
+    id: 'default',
+    name: 'Main Branch',
+    locality: 'Central',
+    city: 'Hyderabad',
+    state: 'Telangana',
+    counters: ['Counter 1 • OPD Desk'],
+    doctorRooms: ['Room 101 • General OPD'],
+    receptionistEmail: 'reception@opriva.com',
+    doctorEmail: 'doctor@opriva.com',
+    doctorName: 'Dr. Physician',
+    department: 'General OPD',
+    status: 'ACTIVE'
+  };
 
   // Role Selection (Receptionist vs Doctor vs Waiting TV)
   const [activeRole, setActiveRole] = useState<'receptionist' | 'clinical' | 'tv'>('receptionist');
@@ -279,18 +107,20 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
   // When Hospital selection changes, automatically pick its first branch
   const handleHospitalChange = (hospitalId: string) => {
     setSelectedHospitalId(hospitalId);
-    const hosp = HOSPITAL_NETWORKS.find(h => h.id === hospitalId) || HOSPITAL_NETWORKS[0];
-    const firstBranch = hosp.branches[0];
-    setSelectedBranchId(firstBranch.id);
-    setSelectedDesk(firstBranch.counters[0] || 'Counter 1');
-    setSelectedRoom(firstBranch.doctorRooms[0] || 'Room 102');
-    setErrorMsg(null);
-    
-    // Auto-update default email
-    if (activeRole === 'receptionist') {
-      setEmailInput(firstBranch.receptionistEmail);
-    } else {
-      setEmailInput(firstBranch.doctorEmail);
+    const hosp = hospitalNetworks.find(h => h.id === hospitalId) || hospitalNetworks[0];
+    if (hosp && hosp.branches.length > 0) {
+      const firstBranch = hosp.branches[0];
+      setSelectedBranchId(firstBranch.id);
+      setSelectedDesk(firstBranch.counters[0] || 'Counter 1');
+      setSelectedRoom(firstBranch.doctorRooms[0] || 'Room 102');
+      setErrorMsg(null);
+      
+      // Auto-update default email
+      if (activeRole === 'receptionist') {
+        setEmailInput(firstBranch.receptionistEmail);
+      } else {
+        setEmailInput(firstBranch.doctorEmail);
+      }
     }
   };
 
@@ -433,13 +263,26 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
           </div>
 
           {/* Quick Info & Sign In Button */}
-          <div className="flex items-center space-x-4">
-            <div className="hidden lg:flex items-center space-x-3 text-xs text-slate-600 border-r border-slate-200 pr-5">
+          <div className="flex items-center space-x-3">
+            <div className="hidden lg:flex items-center space-x-3 text-xs text-slate-600 border-r border-slate-200 pr-4">
               <div className="flex items-center space-x-1.5">
                 <ShieldCheck className="w-4 h-4 text-teal-600" />
                 <span className="font-semibold text-slate-700">ABDM & HIPAA Compliant</span>
               </div>
             </div>
+
+            {/* Hospital Network Management Button */}
+            <button
+              onClick={() => setIsManagementOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs transition flex items-center space-x-2 cursor-pointer shadow-xs"
+              title="Manage Partnered Hospitals, Branches & OPD Chambers"
+            >
+              <Settings className="w-4 h-4 text-teal-700" />
+              <span className="hidden sm:inline">Manage Hospitals</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-teal-200/80 text-teal-900 text-[10px] font-bold">
+                {hospitalNetworks.length}
+              </span>
+            </button>
 
             {/* Prominent Sign In Button */}
             <button
@@ -654,16 +497,25 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
             <div>
               <span className="text-xs font-extrabold uppercase text-slate-500 tracking-wider">Multi-Institutional Network</span>
               <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-1">
-                Supported Hospital Networks & Branches
+                Supported Hospital Networks & Regional Branches
               </h2>
             </div>
-            <div className="text-xs text-slate-500">
-              Select your institution branch to access registered OP workstations.
+            <div className="flex items-center space-x-3">
+              <span className="text-xs text-slate-500 hidden sm:inline">
+                {hospitalNetworks.length} Networks • {hospitalNetworks.reduce((acc, h) => acc + h.branches.length, 0)} Active Branches
+              </span>
+              <button
+                onClick={() => setIsManagementOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Onboard Hospital</span>
+              </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {HOSPITAL_NETWORKS.map(net => (
+            {hospitalNetworks.map(net => (
               <div 
                 key={net.id}
                 onClick={() => {
@@ -758,17 +610,30 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
               
               {/* STEP 1: SELECT HOSPITAL NETWORK */}
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                  1. Hospital Network
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-800">
+                    1. Hospital Network
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLoginModalOpen(false);
+                      setIsManagementOpen(true);
+                    }}
+                    className="text-[11px] font-bold text-teal-700 hover:text-teal-900 underline flex items-center space-x-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>+ Add New Hospital</span>
+                  </button>
+                </div>
                 <select
                   value={selectedHospitalId}
                   onChange={(e) => handleHospitalChange(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white"
                 >
-                  {HOSPITAL_NETWORKS.map(net => (
+                  {hospitalNetworks.map(net => (
                     <option key={net.id} value={net.id}>
-                      {net.name} {net.id === 'apollo' ? '• (Active System)' : '• (Partner Integration)'}
+                      {net.name} {net.status === 'ACTIVE' ? '• (Active System)' : '• (Partner Integration)'}
                     </option>
                   ))}
                 </select>
@@ -993,6 +858,13 @@ export const HospitalStaffIndex: React.FC<HospitalStaffIndexProps> = ({ onSelect
           </div>
         </div>
       )}
+
+      {/* 7. HOSPITAL & BRANCH MANAGEMENT MODAL */}
+      <HospitalManagementModal
+        isOpen={isManagementOpen}
+        onClose={() => setIsManagementOpen(false)}
+        onHospitalsChanged={reloadHospitalNetworks}
+      />
 
     </div>
   );
