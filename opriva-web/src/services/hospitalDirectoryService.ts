@@ -313,6 +313,35 @@ export function addHospitalBranch(hospitalId: string, branch: Omit<HospitalBranc
   return createdBranch;
 }
 
+export function updateHospitalDetails(hospitalId: string, updates: Partial<Omit<HospitalNetwork, 'id' | 'branches'>>): boolean {
+  const networks = getHospitalNetworks();
+  const target = networks.find(h => h.id === hospitalId);
+  if (!target) return false;
+  Object.assign(target, updates);
+  saveHospitalNetworks(networks);
+  return true;
+}
+
+export function updateBranchDetails(hospitalId: string, branchId: string, updates: Partial<Omit<HospitalBranch, 'id'>>): boolean {
+  const networks = getHospitalNetworks();
+  const target = networks.find(h => h.id === hospitalId);
+  if (!target) return false;
+  const branch = target.branches.find(b => b.id === branchId);
+  if (!branch) return false;
+  Object.assign(branch, updates);
+  saveHospitalNetworks(networks);
+  return true;
+}
+
+export function deleteBranch(hospitalId: string, branchId: string): boolean {
+  const networks = getHospitalNetworks();
+  const target = networks.find(h => h.id === hospitalId);
+  if (!target) return false;
+  target.branches = target.branches.filter(b => b.id !== branchId);
+  saveHospitalNetworks(networks);
+  return true;
+}
+
 export function updateHospitalStatus(hospitalId: string, status: 'ACTIVE' | 'PILOT' | 'ONBOARDING'): boolean {
   const networks = getHospitalNetworks();
   const target = networks.find(h => h.id === hospitalId);

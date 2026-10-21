@@ -26,7 +26,12 @@ import {
   ArrowRight,
   TrendingUp,
   FileCheck2,
-  Tv
+  Tv,
+  Edit,
+  Save,
+  Lock,
+  Copy,
+  Check
 } from 'lucide-react';
 import { 
   HospitalNetwork, 
@@ -38,6 +43,9 @@ import {
   updateHospitalStatus, 
   updateBranchStatus, 
   deleteHospital,
+  updateHospitalDetails,
+  updateBranchDetails,
+  deleteBranch,
   INITIAL_HOSPITAL_NETWORKS 
 } from '../services/hospitalDirectoryService';
 
@@ -55,49 +63,69 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
   // Hospital Directory State
   const [hospitals, setHospitals] = useState<HospitalNetwork[]>(() => getHospitalNetworks());
-  const [activeTab, setActiveTab] = useState<'hospitals' | 'onboard' | 'branches' | 'credentials'>('hospitals');
+  const [activeTab, setActiveTab] = useState<'manage-branches' | 'credentials' | 'hospitals' | 'onboard' | 'add-branch'>('manage-branches');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHospitalForBranch, setSelectedHospitalForBranch] = useState<string>(hospitals[0]?.id || 'apollo');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Editing Branch Modal / Drawer State
+  const [editingBranch, setEditingBranch] = useState<{ hospId: string; branch: HospitalBranch } | null>(null);
+  const [editBranchName, setEditBranchName] = useState('');
+  const [editBranchCity, setEditBranchCity] = useState('');
+  const [editBranchLocality, setEditBranchLocality] = useState('');
+  const [editReceptionEmail, setEditReceptionEmail] = useState('');
+  const [editDoctorEmail, setEditDoctorEmail] = useState('');
+  const [editDoctorName, setEditDoctorName] = useState('');
+  const [editDepartment, setEditDepartment] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editCounters, setEditCounters] = useState('');
+  const [editRooms, setEditRooms] = useState('');
+
+  // Editing Hospital State
+  const [editingHospital, setEditingHospital] = useState<HospitalNetwork | null>(null);
+  const [editHospName, setEditHospName] = useState('');
+  const [editHospTagline, setEditHospTagline] = useState('');
+  const [editHospCode, setEditHospCode] = useState('');
 
   // Onboard New Hospital Form State
   const [hospName, setHospName] = useState('');
   const [hospCode, setHospCode] = useState('');
   const [hospTagline, setHospTagline] = useState('');
-  const [hospWebsite, setHospWebsite] = useState('');
   const [hospStatus, setHospStatus] = useState<'ACTIVE' | 'PILOT' | 'ONBOARDING'>('ACTIVE');
-  const [hospBadge, setHospBadge] = useState('Authorized Enterprise Partner');
-  const [hospAccreditations, setHospAccreditations] = useState('NABH, ABDM M1 & M2 Certified');
 
   // Primary branch
   const [branchName, setBranchName] = useState('');
   const [branchLocality, setBranchLocality] = useState('');
   const [branchCity, setBranchCity] = useState('');
   const [branchState, setBranchState] = useState('');
-  const [branchCounters, setBranchCounters] = useState('Counter 1 • General OP Registration, Counter 2 • Senior Care');
-  const [branchDoctorRooms, setBranchDoctorRooms] = useState('Room 101 • General Medicine, Room 102 • Pediatrics');
   const [receptionistEmail, setReceptionistEmail] = useState('');
   const [doctorEmail, setDoctorEmail] = useState('');
   const [doctorName, setDoctorName] = useState('');
   const [department, setDepartment] = useState('General Outpatient Department (OPD)');
-  const [branchPhone, setBranchPhone] = useState('+91 ');
 
-  // Branch addition form
+  // Quick Branch Addition Form
   const [newBranchLocality, setNewBranchLocality] = useState('');
   const [newBranchCity, setNewBranchCity] = useState('');
   const [newBranchState, setNewBranchState] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
   const [newBranchDoctorName, setNewBranchDoctorName] = useState('');
-  const [newBranchDepartment, setNewBranchDepartment] = useState('General Medicine');
+  const [newBranchReceptionEmail, setNewBranchReceptionEmail] = useState('');
+  const [newBranchDoctorEmail, setNewBranchDoctorEmail] = useState('');
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(id);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Creator Admin Master Passcode
     if (adminPasscode === 'opriva2026' || adminPasscode === 'admin123') {
       sessionStorage.setItem('opriva_admin_session', 'authenticated');
       setIsAuthenticated(true);
@@ -117,16 +145,77 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
     setHospitals([...list]);
   };
 
+  // Open Edit Branch Modal
+  const openEditBranch = (hospId: string, branch: HospitalBranch) => {
+    setEditingBranch({ hospId, branch });
+    setEditBranchName(branch.name);
+    setEditBranchCity(branch.city);
+    setEditBranchLocality(branch.locality);
+    setEditReceptionEmail(branch.receptionistEmail);
+    setEditDoctorEmail(branch.doctorEmail);
+    setEditDoctorName(branch.doctorName);
+    setEditDepartment(branch.department);
+    setEditPhone(branch.contactPhone || '');
+    setEditCounters(branch.counters.join(', '));
+    setEditRooms(branch.doctorRooms.join(', '));
+  };
+
+  // Save Branch Updates
+  const handleSaveBranchUpdates = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBranch) return;
+
+    const countersArr = editCounters.split(',').map(s => s.trim()).filter(Boolean);
+    const roomsArr = editRooms.split(',').map(s => s.trim()).filter(Boolean);
+
+    updateBranchDetails(editingBranch.hospId, editingBranch.branch.id, {
+      name: editBranchName.trim(),
+      city: editBranchCity.trim(),
+      locality: editBranchLocality.trim(),
+      receptionistEmail: editReceptionEmail.trim(),
+      doctorEmail: editDoctorEmail.trim(),
+      doctorName: editDoctorName.trim(),
+      department: editDepartment.trim(),
+      contactPhone: editPhone.trim(),
+      counters: countersArr.length > 0 ? countersArr : editingBranch.branch.counters,
+      doctorRooms: roomsArr.length > 0 ? roomsArr : editingBranch.branch.doctorRooms,
+    });
+
+    refreshHospitals();
+    triggerToast(`✅ Updated branch ${editBranchName} & credentials!`);
+    setEditingBranch(null);
+  };
+
+  // Open Edit Hospital Modal
+  const openEditHospital = (hosp: HospitalNetwork) => {
+    setEditingHospital(hosp);
+    setEditHospName(hosp.name);
+    setEditHospTagline(hosp.tagline);
+    setEditHospCode(hosp.code);
+  };
+
+  // Save Hospital Updates
+  const handleSaveHospitalUpdates = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingHospital) return;
+
+    updateHospitalDetails(editingHospital.id, {
+      name: editHospName.trim(),
+      tagline: editHospTagline.trim(),
+      code: editHospCode.trim().toUpperCase(),
+    });
+
+    refreshHospitals();
+    triggerToast(`✅ Updated hospital network ${editHospName}!`);
+    setEditingHospital(null);
+  };
+
   const handleCreateHospital = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hospName.trim() || !branchCity.trim()) {
       alert('Please fill out hospital name and branch city.');
       return;
     }
-
-    const countersArr = branchCounters.split(',').map(s => s.trim()).filter(Boolean);
-    const roomsArr = branchDoctorRooms.split(',').map(s => s.trim()).filter(Boolean);
-    const accreditationsArr = hospAccreditations.split(',').map(s => s.trim()).filter(Boolean);
 
     const generatedCode = hospCode.trim() || hospName.slice(0, 4).toUpperCase();
     const primaryBranchId = hospName.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + branchCity.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -137,14 +226,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
       locality: branchLocality.trim() || `${branchCity} Central`,
       city: branchCity.trim(),
       state: branchState.trim() || 'State',
-      counters: countersArr.length > 0 ? countersArr : ['Counter 1 • General OP Desk'],
-      doctorRooms: roomsArr.length > 0 ? roomsArr : ['Room 101 • General OPD'],
+      counters: ['Counter 1 • General OP Desk', 'Counter 2 • Priority Counter'],
+      doctorRooms: ['Room 101 • General OPD Chamber', 'Room 102 • Diagnostic Chamber'],
       receptionistEmail: receptionistEmail.trim() || `reception.${branchCity.toLowerCase()}@${generatedCode.toLowerCase()}.opriva.com`,
       doctorEmail: doctorEmail.trim() || `doctor.${branchCity.toLowerCase()}@${generatedCode.toLowerCase()}.opriva.com`,
       doctorName: doctorName.trim() || 'Dr. Consultant Physician, MD',
       department: department.trim() || 'General OPD',
       status: hospStatus === 'ACTIVE' ? 'ACTIVE' : 'ONBOARDING',
-      contactPhone: branchPhone.trim(),
       dailyOpdCapacity: 500
     };
 
@@ -153,14 +241,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
       code: generatedCode,
       tagline: hospTagline.trim() || 'Authorized Opriva Healthcare Partner',
       status: hospStatus,
-      badge: hospBadge.trim() || 'Enterprise Partner',
-      website: hospWebsite.trim(),
-      accreditations: accreditationsArr,
+      badge: 'Enterprise Partner',
       branches: [primaryBranch]
     });
 
     refreshHospitals();
-    triggerToast(`🎉 Successfully onboarded ${newHosp.name} (${primaryBranch.city})! App & Staff logins active.`);
+    triggerToast(`🎉 Successfully onboarded ${newHosp.name} (${primaryBranch.city})!`);
 
     setHospName('');
     setHospCode('');
@@ -168,11 +254,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
     setBranchName('');
     setBranchLocality('');
     setBranchCity('');
-    setBranchState('');
-    setReceptionistEmail('');
-    setDoctorEmail('');
-    setDoctorName('');
-    setActiveTab('hospitals');
+    setActiveTab('manage-branches');
   };
 
   const handleCreateBranch = (e: React.FormEvent) => {
@@ -192,10 +274,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
       state: newBranchState.trim() || 'State',
       counters: ['Counter 1 • Outpatient Registration Desk', 'Counter 2 • Fast Track Counter'],
       doctorRooms: ['Room 101 • Outpatient Consultant', 'Room 102 • Diagnostic Specialist'],
-      receptionistEmail: `reception.${newBranchCity.toLowerCase()}@${hospCodeStr}.opriva.com`,
-      doctorEmail: `dr.${newBranchCity.toLowerCase()}@${hospCodeStr}.opriva.com`,
+      receptionistEmail: newBranchReceptionEmail.trim() || `reception.${newBranchCity.toLowerCase()}@${hospCodeStr}.opriva.com`,
+      doctorEmail: newBranchDoctorEmail.trim() || `dr.${newBranchCity.toLowerCase()}@${hospCodeStr}.opriva.com`,
       doctorName: newBranchDoctorName.trim() || 'Dr. Senior Consultant, MBBS MD',
-      department: newBranchDepartment.trim() || 'General OPD',
+      department: 'General OPD',
       status: 'ACTIVE',
       dailyOpdCapacity: 500
     });
@@ -207,7 +289,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
       setNewBranchLocality('');
       setNewBranchCity('');
       setNewBranchState('');
-      setActiveTab('hospitals');
+      setActiveTab('manage-branches');
     }
   };
 
@@ -227,7 +309,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             </span>
             <h1 className="text-2xl font-black text-slate-900 mt-2">Opriva Super-Admin</h1>
             <p className="text-xs text-slate-500 mt-1">
-              Restricted platform gateway. Enter your master passkey to manage hospital networks, branches, and staff credentials.
+              Restricted platform gateway. Enter your master passkey to manage hospital branches, doctors, and login credentials.
             </p>
           </div>
 
@@ -255,7 +337,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
             <button
               type="submit"
-              className="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center space-x-2"
+              className="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center space-x-2 cursor-pointer"
             >
               <span>Unlock Admin Console</span>
               <ArrowRight className="w-4 h-4" />
@@ -266,7 +348,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             <div className="mt-6 pt-4 border-t border-slate-100 text-center">
               <button
                 onClick={onBackToPortal}
-                className="text-xs text-slate-500 hover:text-teal-700 font-bold"
+                className="text-xs text-slate-500 hover:text-teal-700 font-bold cursor-pointer"
               >
                 ← Return to Hospital Staff Gateway
               </button>
@@ -278,11 +360,22 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
     );
   }
 
-  // Creator Admin Dashboard Layout
   const totalBranches = hospitals.reduce((acc, h) => acc + h.branches.length, 0);
 
+  const filteredHospitals = hospitals.filter(h => 
+    h.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    h.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    h.branches.some(b => 
+      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.receptionistEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.doctorEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.doctorName.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
+
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
       
       {/* Top Header */}
       <header className="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
@@ -299,7 +392,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                   Creator Super-Admin
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">Multi-Hospital Network & Staff Credentials Manager</p>
+              <p className="text-[11px] text-slate-400">Manage Hospital Branches, Doctors & Staff Login Credentials</p>
             </div>
           </div>
 
@@ -307,14 +400,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             {onBackToPortal && (
               <button
                 onClick={onBackToPortal}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition"
+                className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition cursor-pointer"
               >
                 View Staff Portal
               </button>
             )}
             <button
               onClick={handleAdminLogout}
-              className="px-3 py-1.5 rounded-xl bg-red-950/50 hover:bg-red-900 text-red-200 border border-red-800/60 text-xs font-bold flex items-center space-x-1.5 transition"
+              className="px-3.5 py-1.5 rounded-xl bg-red-950/50 hover:bg-red-900 text-red-200 border border-red-800/60 text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Lock Admin</span>
@@ -344,9 +437,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Partner Hospitals</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Partner Networks</span>
               <div className="text-2xl font-black text-slate-900 mt-1">{hospitals.length}</div>
-              <span className="text-[11px] text-teal-600 font-bold">Approved Institutions</span>
+              <span className="text-[11px] text-teal-600 font-bold">Approved Brands</span>
             </div>
             <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
               <Hospital className="w-6 h-6" />
@@ -355,9 +448,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Regional Branches</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Branches</span>
               <div className="text-2xl font-black text-slate-900 mt-1">{totalBranches}</div>
-              <span className="text-[11px] text-indigo-600 font-bold">Live Facilities</span>
+              <span className="text-[11px] text-indigo-600 font-bold">Manageable Facilities</span>
             </div>
             <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center">
               <MapPin className="w-6 h-6" />
@@ -366,95 +459,95 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Mobile App Sync</span>
-              <div className="text-2xl font-black text-emerald-600 mt-1">100%</div>
-              <span className="text-[11px] text-emerald-700 font-bold">Auto-Pushed to Patients</span>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-              <Activity className="w-6 h-6" />
-            </div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-            <div>
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Staff Credentials</span>
               <div className="text-2xl font-black text-slate-900 mt-1">{totalBranches * 2}</div>
-              <span className="text-[11px] text-slate-500 font-bold">Reception + Doctor Logins</span>
+              <span className="text-[11px] text-teal-700 font-bold">Reception + Doctor Logins</span>
             </div>
             <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center">
               <KeyRound className="w-6 h-6" />
             </div>
           </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Mobile App Sync</span>
+              <div className="text-2xl font-black text-emerald-600 mt-1">100%</div>
+              <span className="text-[11px] text-emerald-700 font-bold">Real-time Directory</span>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <Activity className="w-6 h-6" />
+            </div>
+          </div>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Tab Navigation */}
         <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setActiveTab('hospitals')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                activeTab === 'hospitals'
+              onClick={() => setActiveTab('manage-branches')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer ${
+                activeTab === 'manage-branches'
                   ? 'bg-teal-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              Hospitals Directory ({hospitals.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('onboard')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition ${
-                activeTab === 'onboard'
-                  ? 'bg-teal-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Onboard New Hospital</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('branches')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition ${
-                activeTab === 'branches'
-                  ? 'bg-teal-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>+ Add Regional Branch</span>
+              <Edit className="w-3.5 h-3.5" />
+              <span>Manage Branches & Credentials</span>
             </button>
             <button
               onClick={() => setActiveTab('credentials')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer ${
                 activeTab === 'credentials'
                   ? 'bg-teal-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>Staff Login Matrix</span>
+              <span>Full Credentials Matrix</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('add-branch')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer ${
+                activeTab === 'add-branch'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Add New Branch</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('onboard')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer ${
+                activeTab === 'onboard'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>+ Onboard New Hospital</span>
             </button>
           </div>
 
-          {activeTab === 'hospitals' && (
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                placeholder="Search hospital or city..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 w-56"
-              />
-            </div>
-          )}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Filter by hospital, branch, email, doctor..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 w-64"
+            />
+          </div>
         </div>
 
-        {/* TAB 1: HOSPITALS LIST */}
-        {activeTab === 'hospitals' && (
-          <div className="space-y-4">
-            {hospitals.map(hosp => (
+        {/* TAB 1: MANAGE BRANCHES & LOGIN CREDENTIALS */}
+        {activeTab === 'manage-branches' && (
+          <div className="space-y-6">
+            {filteredHospitals.map(hosp => (
               <div key={hosp.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="p-5 bg-slate-50/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                {/* Hospital Header */}
+                <div className="p-5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 rounded-xl bg-teal-100 border border-teal-300 flex items-center justify-center font-black text-teal-800 text-base">
                       {hosp.code.slice(0, 3)}
@@ -479,79 +572,144 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
                   <div className="flex items-center space-x-2">
                     <button
+                      onClick={() => openEditHospital(hosp)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      <span>Edit Hospital Info</span>
+                    </button>
+                    <button
                       onClick={() => {
                         const next = hosp.status === 'ACTIVE' ? 'ONBOARDING' : 'ACTIVE';
                         updateHospitalStatus(hosp.id, next);
                         refreshHospitals();
-                        triggerToast(`Hospital ${hosp.name} status updated to ${next}`);
+                        triggerToast(`Hospital ${hosp.name} set to ${next}`);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-white hover:bg-slate-100"
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-white hover:bg-slate-100 cursor-pointer"
                     >
                       {hosp.status === 'ACTIVE' ? 'Pause Mobile Visibility' : 'Activate in Mobile App'}
                     </button>
                     <button
                       onClick={() => {
                         setSelectedHospitalForBranch(hosp.id);
-                        setActiveTab('branches');
+                        setActiveTab('add-branch');
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 flex items-center space-x-1"
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 flex items-center space-x-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add Branch</span>
                     </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Delete hospital network ${hosp.name}?`)) {
-                          deleteHospital(hosp.id);
-                          refreshHospitals();
-                          triggerToast(`Deleted ${hosp.name}`);
-                        }
-                      }}
-                      className="p-2 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                      title="Delete network"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
 
-                {/* Branches List */}
-                <div className="p-5 space-y-3">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                    Branches & OPD Chambers ({hosp.branches.length})
-                  </span>
+                {/* Branches Cards with In-Place Credential Management */}
+                <div className="p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Branches & Dedicated Staff Logins ({hosp.branches.length})
+                    </span>
+                    <span className="text-xs text-slate-400">Click "Manage / Edit" to update branch names, doctors, or staff login emails</span>
+                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {hosp.branches.map(branch => (
-                      <div key={branch.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                      <div key={branch.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white transition-all space-y-3">
+                        
+                        {/* Branch Title & Quick Status */}
                         <div className="flex items-start justify-between">
                           <div>
-                            <h4 className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
+                            <h4 className="font-extrabold text-slate-900 text-sm flex items-center space-x-1.5">
                               <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                               <span>{branch.name}</span>
                             </h4>
                             <p className="text-xs text-slate-500 pl-5">{branch.locality}, {branch.city}, {branch.state}</p>
                           </div>
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                            {branch.status}
+                          <div className="flex items-center space-x-2">
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded ${
+                              branch.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {branch.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Configured Staff Logins */}
+                        <div className="p-3 bg-white rounded-lg border border-slate-200 text-xs space-y-2">
+                          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            Active Staff Credentials
+                          </div>
+
+                          {/* Receptionist Credential */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 text-slate-700">
+                              <Users className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                              <span className="text-slate-500">Reception Desk:</span>
+                              <strong className="font-mono text-slate-900">{branch.receptionistEmail}</strong>
+                            </div>
+                            <button
+                              onClick={() => handleCopy(branch.receptionistEmail, `rec-${branch.id}`)}
+                              className="text-[10px] font-bold text-teal-700 hover:text-teal-900 flex items-center space-x-1 cursor-pointer"
+                              title="Copy Login Email"
+                            >
+                              {copiedKey === `rec-${branch.id}` ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                              <span>{copiedKey === `rec-${branch.id}` ? 'Copied' : 'Copy'}</span>
+                            </button>
+                          </div>
+
+                          {/* Doctor Credential */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 text-slate-700">
+                              <Stethoscope className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                              <span className="text-slate-500">Doctor:</span>
+                              <strong className="font-mono text-slate-900">{branch.doctorEmail}</strong>
+                            </div>
+                            <button
+                              onClick={() => handleCopy(branch.doctorEmail, `doc-${branch.id}`)}
+                              className="text-[10px] font-bold text-teal-700 hover:text-teal-900 flex items-center space-x-1 cursor-pointer"
+                              title="Copy Login Email"
+                            >
+                              {copiedKey === `doc-${branch.id}` ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                              <span>{copiedKey === `doc-${branch.id}` ? 'Copied' : 'Copy'}</span>
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 text-slate-500">
+                            <span>Doctor: <strong className="text-slate-800">{branch.doctorName}</strong> ({branch.department})</span>
+                            <span className="font-mono">Pass: password123</span>
+                          </div>
+                        </div>
+
+                        {/* Branch Action Buttons */}
+                        <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
+                          <span className="text-[11px] text-slate-500">
+                            {branch.counters.length} Counters • {branch.doctorRooms.length} Chambers
                           </span>
+                          
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => openEditBranch(hosp.id, branch)}
+                              className="px-3 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold border border-teal-200 flex items-center space-x-1 cursor-pointer"
+                            >
+                              <Edit className="w-3 h-3" />
+                              <span>Manage / Edit</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                if (confirm(`Remove branch ${branch.name}?`)) {
+                                  deleteBranch(hosp.id, branch.id);
+                                  refreshHospitals();
+                                  triggerToast(`Branch ${branch.name} deleted.`);
+                                }
+                              }}
+                              className="p-1 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 cursor-pointer"
+                              title="Delete branch"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="pt-2 border-t border-slate-200 text-xs space-y-1.5">
-                          <div className="flex items-center space-x-2 text-slate-700">
-                            <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>Receptionist: <strong>{branch.receptionistEmail}</strong></span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-slate-700">
-                            <Stethoscope className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                            <span>Doctor: <strong>{branch.doctorName}</strong> ({branch.doctorEmail})</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px] text-slate-500">
-                          <span>{branch.counters.length} Counters • {branch.doctorRooms.length} Chambers</span>
-                          <span className="font-bold text-teal-700">Default Password: password123</span>
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -561,7 +719,201 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           </div>
         )}
 
-        {/* TAB 2: ONBOARD NEW HOSPITAL */}
+        {/* TAB 2: CREDENTIALS DIRECTORY MATRIX */}
+        {activeTab === 'credentials' && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                  <KeyRound className="w-5 h-5 text-teal-600" />
+                  <span>Hospital Staff Login Directory Matrix</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Master index of all configured login credentials. Staff use these to access their workstations.
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
+                  <tr>
+                    <th className="p-3">Hospital Network & Regional Facility</th>
+                    <th className="p-3">Workstation Role</th>
+                    <th className="p-3">Staff Identifier (Email)</th>
+                    <th className="p-3">Default Pass</th>
+                    <th className="p-3">Assigned Counter / Room</th>
+                    <th className="p-3 text-right">Quick Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {hospitals.flatMap(h => 
+                    h.branches.flatMap(b => [
+                      {
+                        hospId: h.id,
+                        hosp: h.name,
+                        branch: b,
+                        role: 'OP Reception Desk',
+                        email: b.receptionistEmail,
+                        station: b.counters[0] || 'Counter 1'
+                      },
+                      {
+                        hospId: h.id,
+                        hosp: h.name,
+                        branch: b,
+                        role: `Doctor Chamber (${b.doctorName})`,
+                        email: b.doctorEmail,
+                        station: b.doctorRooms[0] || 'Room 101'
+                      }
+                    ])
+                  ).map((cred, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50 transition">
+                      <td className="p-3 font-semibold text-slate-900">{cred.hosp} — {cred.branch.name}</td>
+                      <td className="p-3 font-bold text-teal-700">{cred.role}</td>
+                      <td className="p-3 font-mono text-slate-800 font-bold">{cred.email}</td>
+                      <td className="p-3 font-mono text-slate-500">password123</td>
+                      <td className="p-3 text-slate-600">{cred.station}</td>
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => openEditBranch(cred.hospId, cred.branch)}
+                          className="px-2.5 py-1 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-[11px] border border-teal-200 cursor-pointer"
+                        >
+                          Edit Login
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: ADD NEW REGIONAL BRANCH */}
+        {activeTab === 'add-branch' && (
+          <form onSubmit={handleCreateBranch} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
+            <div>
+              <h2 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                <Plus className="w-5 h-5 text-teal-600" />
+                <span>Add Regional Branch & Generate Staff Credentials</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Configure a new hospital location with dedicated receptionist and doctor login credentials.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Select Hospital Enterprise Network *</label>
+                <select
+                  value={selectedHospitalForBranch}
+                  onChange={(e) => setSelectedHospitalForBranch(e.target.value)}
+                  className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 outline-none"
+                >
+                  {hospitals.map(h => (
+                    <option key={h.id} value={h.id}>
+                      {h.name} ({h.code}) — {h.branches.length} Current Branches
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Branch Facility Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Apollo Hospital (Hitec City)"
+                    value={newBranchName}
+                    onChange={(e) => setNewBranchName(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">City *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Hyderabad, Vijayawada"
+                    value={newBranchCity}
+                    onChange={(e) => setNewBranchCity(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Locality</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Madhapur"
+                    value={newBranchLocality}
+                    onChange={(e) => setNewBranchLocality(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Staff Logins Setup */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                  Staff Authentication Credentials
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Receptionist Login Email</label>
+                    <input
+                      type="email"
+                      placeholder="Leave blank for auto-generated email"
+                      value={newBranchReceptionEmail}
+                      onChange={(e) => setNewBranchReceptionEmail(e.target.value)}
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Doctor Login Email</label>
+                    <input
+                      type="email"
+                      placeholder="Leave blank for auto-generated email"
+                      value={newBranchDoctorEmail}
+                      onChange={(e) => setNewBranchDoctorEmail(e.target.value)}
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Doctor In-Charge Name</label>
+                  <input
+                    type="text"
+                    placeholder="Dr. Consultant Physician, MD"
+                    value={newBranchDoctorName}
+                    onChange={(e) => setNewBranchDoctorName(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setActiveTab('manage-branches')}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center space-x-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Register & Launch Branch</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* TAB 4: ONBOARD NEW HOSPITAL ENTERPRISE */}
         {activeTab === 'onboard' && (
           <form onSubmit={handleCreateHospital} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
             <div>
@@ -697,14 +1049,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             <div className="flex items-center justify-end space-x-3">
               <button
                 type="button"
-                onClick={() => setActiveTab('hospitals')}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                onClick={() => setActiveTab('manage-branches')}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center space-x-2"
+                className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center space-x-2 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Confirm & Publish Hospital</span>
@@ -713,147 +1065,189 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           </form>
         )}
 
-        {/* TAB 3: ADD REGIONAL BRANCH */}
-        {activeTab === 'branches' && (
-          <form onSubmit={handleCreateBranch} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 flex items-center space-x-2">
-                <MapPin className="w-5 h-5 text-teal-600" />
-                <span>Add Regional Branch to Hospital Network</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Expand an onboarded hospital network with a new city branch and consultation chambers.
-              </p>
+      </main>
+
+      {/* MODAL 1: EDIT BRANCH & CREDENTIALS */}
+      {editingBranch && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden my-8">
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <Edit className="w-5 h-5 text-teal-400" />
+                <div>
+                  <h3 className="font-bold text-sm">Manage Branch & Staff Credentials</h3>
+                  <p className="text-[11px] text-slate-400">Update facility details, doctor in-charge, and login emails</p>
+                </div>
+              </div>
+              <button onClick={() => setEditingBranch(null)} className="p-1 rounded text-slate-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="space-y-4">
+            <form onSubmit={handleSaveBranchUpdates} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Select Hospital Network *</label>
-                <select
-                  value={selectedHospitalForBranch}
-                  onChange={(e) => setSelectedHospitalForBranch(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 outline-none"
-                >
-                  {hospitals.map(h => (
-                    <option key={h.id} value={h.id}>
-                      {h.name} ({h.code}) — {h.branches.length} Current Branches
-                    </option>
-                  ))}
-                </select>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Branch Facility Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editBranchName}
+                  onChange={(e) => setEditBranchName(e.target.value)}
+                  className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:bg-white"
+                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Branch Facility Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Apollo Hospital (Hitec City)"
-                    value={newBranchName}
-                    onChange={(e) => setNewBranchName(e.target.value)}
-                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">City *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">City</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Hyderabad, Vijayawada"
-                    value={newBranchCity}
-                    onChange={(e) => setNewBranchCity(e.target.value)}
-                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none"
+                    value={editBranchCity}
+                    onChange={(e) => setEditBranchCity(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Locality</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Locality / Area</label>
                   <input
                     type="text"
-                    placeholder="e.g. Madhapur"
-                    value={newBranchLocality}
-                    onChange={(e) => setNewBranchLocality(e.target.value)}
-                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none"
+                    value={editBranchLocality}
+                    onChange={(e) => setEditBranchLocality(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:bg-white"
                   />
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setActiveTab('hospitals')}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Register & Launch Branch</span>
-              </button>
-            </div>
-          </form>
-        )}
+              {/* Login Credentials Section */}
+              <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-200 space-y-3">
+                <div className="flex items-center space-x-1.5 text-xs font-bold text-teal-900">
+                  <KeyRound className="w-4 h-4 text-teal-600" />
+                  <span>Workstation Staff Logins</span>
+                </div>
 
-        {/* TAB 4: CREDENTIALS MATRIX */}
-        {activeTab === 'credentials' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 flex items-center space-x-2">
-                <KeyRound className="w-5 h-5 text-teal-600" />
-                <span>Hospital Staff Credentials Directory</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                All staff logins configured by you for receptionists and doctors across hospital branches.
-              </p>
-            </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Receptionist Desk Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={editReceptionEmail}
+                    onChange={(e) => setEditReceptionEmail(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none font-mono"
+                  />
+                </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
-                  <tr>
-                    <th className="p-3">Hospital & Branch</th>
-                    <th className="p-3">Role</th>
-                    <th className="p-3">Login Identifier (Email)</th>
-                    <th className="p-3">Default Pass</th>
-                    <th className="p-3">Chamber / Desk</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {hospitals.flatMap(h => 
-                    h.branches.flatMap(b => [
-                      {
-                        hosp: h.name,
-                        branch: b.name,
-                        role: 'OP Reception Desk',
-                        email: b.receptionistEmail,
-                        station: b.counters[0] || 'Counter 1'
-                      },
-                      {
-                        hosp: h.name,
-                        branch: b.name,
-                        role: `Doctor (${b.doctorName})`,
-                        email: b.doctorEmail,
-                        station: b.doctorRooms[0] || 'Room 101'
-                      }
-                    ])
-                  ).map((cred, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="p-3 font-semibold text-slate-900">{cred.hosp} — {cred.branch}</td>
-                      <td className="p-3 font-bold text-teal-700">{cred.role}</td>
-                      <td className="p-3 font-mono text-slate-800">{cred.email}</td>
-                      <td className="p-3 font-mono text-slate-500">password123</td>
-                      <td className="p-3 text-slate-600">{cred.station}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Doctor In-Charge Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editDoctorName}
+                    onChange={(e) => setEditDoctorName(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Doctor Login Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={editDoctorEmail}
+                    onChange={(e) => setEditDoctorEmail(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingBranch(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
-      </main>
+      {/* MODAL 2: EDIT HOSPITAL ENTERPRISE */}
+      {editingHospital && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <Building2 className="w-5 h-5 text-teal-400" />
+                <h3 className="font-bold text-sm">Edit Hospital Network</h3>
+              </div>
+              <button onClick={() => setEditingHospital(null)} className="p-1 rounded text-slate-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveHospitalUpdates} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Hospital Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editHospName}
+                  onChange={(e) => setEditHospName(e.target.value)}
+                  className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Short Code</label>
+                <input
+                  type="text"
+                  required
+                  value={editHospCode}
+                  onChange={(e) => setEditHospCode(e.target.value)}
+                  className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none uppercase font-mono focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Motto / Tagline</label>
+                <input
+                  type="text"
+                  value={editHospTagline}
+                  onChange={(e) => setEditHospTagline(e.target.value)}
+                  className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg outline-none focus:bg-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingHospital(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Update Hospital</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
