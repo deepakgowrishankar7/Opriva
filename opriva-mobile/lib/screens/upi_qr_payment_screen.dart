@@ -86,6 +86,9 @@ class _UpiQrPaymentScreenState extends State<UpiQrPaymentScreen> {
         patientsAhead: isSpecial ? 2 : 4,
         estWaitMinutes: isSpecial ? 12 : 24,
         receptionistPhone: widget.hospital.receptionistPhone ?? '+91-40-2360-7777',
+        latitude: widget.hospital.latitude ?? 17.4156,
+        longitude: widget.hospital.longitude ?? 78.4121,
+        address: widget.hospital.address,
         bookedAt: DateTime.now(),
       ),
     );

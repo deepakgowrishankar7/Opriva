@@ -7,6 +7,9 @@ import '../core/localization/app_localizations.dart';
 import '../main.dart';
 import 'op_card_selection_screen.dart';
 import 'live_queue_tracker_screen.dart';
+import 'patient_auth_screen.dart';
+import 'patient_op_history_screen.dart';
+import 'hospital_map_screen.dart';
 
 class HomeHospitalScreen extends StatefulWidget {
   const HomeHospitalScreen({Key? key}) : super(key: key);
@@ -109,6 +112,29 @@ class _HomeHospitalScreenState extends State<HomeHospitalScreen> {
                 child: Text(lang, style: const TextStyle(fontSize: 13)),
               );
             }).toList(),
+          ),
+          // Patient Profile / Auth Button
+          IconButton(
+            icon: Icon(
+              LocalTicketStorageService.isLoggedIn ? Icons.account_circle : Icons.person_outline,
+              color: LocalTicketStorageService.isLoggedIn ? OprivaTheme.healthcareTeal : OprivaTheme.navyDark,
+              size: 26,
+            ),
+            tooltip: LocalTicketStorageService.isLoggedIn ? 'My OP History' : 'Patient Sign In / Sign Up',
+            onPressed: () async {
+              if (LocalTicketStorageService.isLoggedIn) {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (ctx) => const PatientOpHistoryScreen()),
+                );
+              } else {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (ctx) => const PatientAuthScreen()),
+                );
+              }
+              setState(() {});
+            },
           ),
           IconButton(
             icon: const Icon(Icons.notifications_none, color: OprivaTheme.navyDark),
@@ -379,6 +405,26 @@ class _HomeHospitalScreenState extends State<HomeHospitalScreen> {
                     const Text('Special Priority Card', style: TextStyle(fontSize: 11, color: Colors.grey)),
                     const Text('₹750.00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: OprivaTheme.healthcareTeal)),
                   ],
+                ),
+                // Direct Hospital Map Navigation Button
+                IconButton(
+                  icon: const Icon(Icons.directions_outlined, color: Color(0xFF2563EB)),
+                  tooltip: 'View Hospital Route & Map',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => HospitalMapScreen(
+                          hospitalName: hosp.name,
+                          locality: hosp.locality,
+                          city: hosp.city,
+                          latitude: hosp.latitude ?? 17.4156,
+                          longitude: hosp.longitude ?? 78.4121,
+                          receptionistPhone: hosp.receptionistPhone ?? '+91-40-2360-7777',
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 ElevatedButton(
                   onPressed: () {

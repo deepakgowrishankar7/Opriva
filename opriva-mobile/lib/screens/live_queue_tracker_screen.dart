@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/opriva_theme.dart';
 import 'medical_reports_screen.dart';
+import 'hospital_map_screen.dart';
 
 class LiveQueueTrackerScreen extends StatefulWidget {
   final String hospitalName;
@@ -276,6 +277,36 @@ class _LiveQueueTrackerScreenState extends State<LiveQueueTrackerScreen> {
             const SizedBox(height: 14),
 
             // View Medical Reports Button
+            // Navigation Map & Records Buttons
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.navigation_outlined, size: 18),
+                label: const Text('Open Hospital GPS Route & Map'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: OprivaTheme.healthcareTeal,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (ctx) => HospitalMapScreen(
+                        hospitalName: widget.hospitalName,
+                        locality: 'Central Facility',
+                        city: 'Hyderabad',
+                        latitude: 17.4156,
+                        longitude: 78.4121,
+                        receptionistPhone: widget.receptionistPhone,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
